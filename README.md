@@ -14,6 +14,18 @@ mybatis 简单的增删改查的例子
 
 
 
+### generatorSqlmapCustom
+逆向工厂项目
+基于已有的数据库，生成 mybatis 的 Model，Mapper。
+
+
+
+### mybatisUseGen
+使用上面的 generatorSqlmapCustom 项目， 生成的代码。
+进行测试的处理。
+
+
+
 ### mytoolkit
 一个空壳的 java Web Api 项目.
 用于临时给别人的 Java SDK 套一个壳来使用。
