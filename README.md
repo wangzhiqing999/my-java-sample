@@ -3,8 +3,15 @@
 
 
 
-### mybatissHelloWorld
-mybatiss 简单的增删改查的例子
+### mybatisHelloWorld
+mybatis 简单的增删改查的例子
+
+
+
+### mybatisMapper
+基于前面的 mybatis HelloWorld 的例子的基础。
+引入 Mapper， 简化java 代码的操作。
+
 
 
 ### mytoolkit
