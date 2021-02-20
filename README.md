@@ -41,3 +41,20 @@ mybatis 简单的增删改查的例子
 ### springsample
 结合 mybatisUseGen 与 mytoolkit
 搭建的 Springboot 整合 Mybatis 的一个 Web Api 项目。
+
+
+
+
+
+### studyspringsecurity1
+Spring Security 学习的例子1 - Hello World 级别的
+
+
+### studyspringsecurity2
+Spring Security 学习的例子2 - 自定义 Spring Security 的配置 - 硬编码方式完成
+
+
+### studyspringsecurity3
+Spring Security 学习的例子3 - 自定义 Spring Security 的配置 - 注解方式完成
+
+
