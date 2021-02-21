@@ -58,3 +58,6 @@ Spring Security 学习的例子2 - 自定义 Spring Security 的配置 - 硬编�
 Spring Security 学习的例子3 - 自定义 Spring Security 的配置 - 注解方式完成
 
 
+### studyspringsecurity4
+Spring Security 学习的例子4 - 基于内存数据库(hsqldb)的身份认证和角色授权
+
