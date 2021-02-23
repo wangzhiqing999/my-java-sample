@@ -74,3 +74,6 @@ Spring Security 学习的例子6 - 自定义登录页面和构建主页
 Spring Security 学习的例子7 - 动态加载角色
 
 
+### studyspringsecurity8
+Spring Security 学习的例子8 - 基于URL动态权限
+

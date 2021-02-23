@@ -1,0 +1,26 @@
+<!DOCTYPE html>  
+<html xmlns="http://www.w3.org/1999/xhtml" 
+	xmlns:th="http://www.thymeleaf.org" 
+	xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity5">  
+    <head>
+        <title>Spring Security 学习代码 --- 首页</title>
+    </head>
+    <body>
+        <h1>欢迎使用Spring Security! 
+        	当前的登录账号是：<label th:text="${name}"></label>
+			,通过标签显示用户名：<label sec:authentication="name"></label>
+        </h1>
+        
+        <form th:action="@{/logout}" method="post">
+            <input type="submit" value="退出登录"/>
+		</form>
+        
+        
+        <p sec:authorize="hasRole('admin')"> <a th:href="@{/helloAdmin}">admin page</a></p>
+        <p sec:authorize="hasAnyRole('admin','normal')"><a th:href="@{/helloUser}">user page</a></p>
+        
+        
+        <p><a th:href="@{/helloWorld}">hello World page</a></p>
+        
+    </body>
+</html>
