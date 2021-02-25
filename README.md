@@ -53,6 +53,12 @@ Spring Configuration 学习的例子
 在Spring Boot 中记录日志的例子 
 
 
+
+### studyspringredis1
+在Spring Boot 中使用 redis 的例子.
+
+
+
 ### studyspringsecurity1
 Spring Security 学习的例子1 - Hello World 级别的
 
