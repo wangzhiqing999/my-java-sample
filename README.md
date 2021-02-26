@@ -90,3 +90,9 @@ Spring Security 学习的例子7 - 动态加载角色
 ### studyspringsecurity8
 Spring Security 学习的例子8 - 基于URL动态权限
 
+
+
+### studyspringvalidation1
+Spring Validation 学习的例子1 - 基本的 web api 参数校验，与通用返回结果
+
+
