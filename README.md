@@ -49,6 +49,16 @@ mybatis 简单的增删改查的例子
 Spring Configuration 学习的例子 
 
 
+### studyspringjob1
+在 Spring Boot 中定时执行任务的例子1 - 使用 Spring Task 
+
+
+### studyspringjob2
+在 Spring Boot 中定时执行任务的例子2 - 使用 Quartz 单机
+
+
+
+
 ### studyspringlogback
 在Spring Boot 中记录日志的例子 
 
