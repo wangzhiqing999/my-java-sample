@@ -54,7 +54,11 @@ Spring Configuration 学习的例子
 
 
 ### studyspringjob2
-在 Spring Boot 中定时执行任务的例子2 - 使用 Quartz 单机
+在 Spring Boot 中定时执行任务的例子2 - 使用 Quartz memory
+
+
+### studyspringjob3
+在 Spring Boot 中定时执行任务的例子2 - 使用  Quartz jdbc
 
 
 
