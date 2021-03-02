@@ -45,6 +45,12 @@ mybatis 简单的增删改查的例子
 
 
 
+studyspringasyncjob1
+在 Spring Boot 中异步执行任务的例子1 - 使用 Spring Task
+
+
+
+
 ### studyspringconfiguration
 Spring Configuration 学习的例子 
 
@@ -65,6 +71,12 @@ Spring Configuration 学习的例子
 
 ### studyspringlogback
 在Spring Boot 中记录日志的例子 
+
+
+
+### studyspringnacosdiscovery
+Spring Boot + Nacos 学习的例子 - discovery
+
 
 
 
