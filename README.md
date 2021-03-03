@@ -44,6 +44,11 @@ mybatis 简单的增删改查的例子
 
 
 
+## studyspringactuator1-4
+Spring Boot 监控端点 Actuator 的一些例子代码。
+
+
+
 
 studyspringasyncjob1
 在 Spring Boot 中异步执行任务的例子1 - 使用 Spring Task
