@@ -69,8 +69,11 @@ Spring Configuration 学习的例子
 
 
 ### studyspringjob3
-在 Spring Boot 中定时执行任务的例子2 - 使用  Quartz jdbc
+在 Spring Boot 中定时执行任务的例子3 - 使用  Quartz jdbc
 
+
+### studyspringjob4
+在 Spring Boot 中定时执行任务的例子4 - 使用 XXL-JOB
 
 
 
