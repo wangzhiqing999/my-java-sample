@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: demo-application
+  
+  profiles:
+    # 修改下面这个来测试. dev 或者  prod 
+    active: prod    

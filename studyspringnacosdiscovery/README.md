@@ -26,7 +26,7 @@ Spring Boot + Nacos 学习的例子 - discovery
 
 
 
-将 src\main\resources 目录下的 application.properties 修改为 application.yml
+将 src\main\resources 目录下的 application.properties 修改为 application.yaml
 填写用于测试的 nacos 配置信息.
 
 
