@@ -44,6 +44,14 @@ mybatis 简单的增删改查的例子
 
 
 
+### studylombok
+学习使用 lombok 的例子.
+
+
+### studymapstruct1
+学习使用 mapstruct 的例子
+
+
 ## studyspringactuator1-4
 Spring Boot 监控端点 Actuator 的一些例子代码。
 
