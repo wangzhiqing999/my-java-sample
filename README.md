@@ -44,6 +44,11 @@ mybatis 简单的增删改查的例子
 
 
 
+### studykaptcha1
+学习使用 kaptcha1 的例子. (验证码简单实例)
+
+
+
 ### studylombok
 学习使用 lombok 的例子.
 
