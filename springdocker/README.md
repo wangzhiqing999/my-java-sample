@@ -151,3 +151,59 @@ springboot.log
 
 
 
+
+
+
+
+
+
+## 2021年4月20日追加使用 IntelliJ IDEA 部署 springboot 项目到 docker 的操作
+
+不新写代码，沿用已有的项目结构。
+
+
+配置测试服务器 192.168.1.39 ，允许 Docker 远程连接.
+
+使用 IntelliJ IDEA 2020.3.3 (Community Edition) 打开本目录。
+
+先安装 Docker 插件
+在File-》Setting-》Plugins-》Browse Repositones 进行下载安装：
+
+使用docker插件连接到Linux上的docker容器
+在File-》Settings-》Build, Execution, Deployment-》Docker里用Linux主机的IP:2375进行连接：
+连接成功后可以看到docker里所有的镜像以及容器
+
+
+
+### 修改 pom.xml
+
+追加使用docker-maven-plugin插件的定义.
+
+
+### 运行 Maven package
+
+在右边的 Maven 树形列表中，选择 springdocker -》 Lifecycle -》package 
+鼠标右键，【Run Maven Build】
+
+
+
+### 查询镜像
+
+在底部的【Service】选项卡中，查看 Docker 的 Images ，能够看到 新创建的 镜像， springdocker:latest
+
+
+### 创建容器.
+
+选择上一步的镜像，鼠标右键，【Create container】 新建容器。
+
+当前例子，主要需要输入
+Container name: springdocker
+Bind ports: 8088:8080
+
+然后点击【Run】
+
+
+### 测试访问
+http://192.168.1.39:8088/api/hello
+
+
