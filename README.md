@@ -46,11 +46,20 @@ mybatis 简单的增删改查的例子
 
 
 
+### studycommomscodec
+学习使用 org.apache.commons.codec 相关的例子。
+
+
 ### studycommonsio
 学习使用 org.apache.commons.io 相关的例子。
 
+
 ### studycommonslang3
 学习使用 org.apache.commons.lang3 相关的例子。
+
+### studycommonstext
+学习使用 org.apache.commons.text 相关的例子。
+
 
 
 
