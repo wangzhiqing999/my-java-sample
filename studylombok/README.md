@@ -2,7 +2,7 @@ lombok 使用的学习
 
 
 
-开发工具是 Spring Tool Suite 
+开发工具是 Spring Tool Suite
 需要做一定的配置工作。
 
 1、下载lombok.jar
@@ -43,7 +43,7 @@ D:\java_dev_env>java -jar lombok.jar
 项目名称为 studylombok
 
 
-### 测试基本的 @Data 
+### 测试基本的 @Data
 
 修改 pom.xml
 
@@ -62,22 +62,22 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data 
-@NoArgsConstructor 
-@AllArgsConstructor 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
-	private Long id; 
-	private String userName; 
-	private String password; 
-	private String name; 
-	private Integer age; 
-	private String email; 
+	private Long id;
+	private String userName;
+	private String password;
+	private String name;
+	private Integer age;
+	private String email;
 }
 
 
 修改运行类
 
-public class App 
+public class App
 {
     public static void main( String[] args )
     {
@@ -89,6 +89,41 @@ public class App
 
 
 测试运行
+
+
+
+### 测试 @Builder
+
+User 类上面， 简单加  @Builder
+
+User 类 password 的上面， 简单添加  @Builder.Default
+给 password 设置一个初始值.
+
+
+然后，App类，测试 builder 的使用。
+
+	User user2 = User.builder()
+			.id(123L)
+			.name("张三")
+			.userName("zhang3")
+			.age(25)
+			.email("zhangsan@test.com")
+			.build();
+
+
+
+
+
+
+### 测试 @ToString
+
+User 类上面， 简单加  @ToString
+
+然后，App类， 尝试 System.out.println(user2); 的处理
+
+
+
+
 
 
 
@@ -126,20 +161,20 @@ log4j.appender.console.layout.ConversionPattern = [%-5p] %d{yyyy-MM-dd HH:mm:ss,
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class App 
+public class App
 {
     public static void main( String[] args )
     {
-        
+
         log.debug("Test Debug");
         log.info("Test Info");
         log.warn("Test Warn");
         log.error("Test Error");
-        
-        
+
+
         User user = new User();
-        user.setUserName("ZhangSan");        
-        
+        user.setUserName("ZhangSan");
+
         System.out.println(user.getUserName());
     }
 }
