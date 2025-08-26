@@ -1,0 +1,29 @@
+server:
+  port: 8080
+  servlet:
+    context-path:
+
+spring:
+  application:
+    name: user-service22
+  mvc:
+    #解决knife4j版本兼容问题
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  datasource:
+    url: jdbc:postgresql://pve003:5432/postgres
+    username: postgres
+    password: 123456
+    driver-class-name: org.postgresql.Driver
+mybatis:
+  mapper-locations: classpath*:db/*.xml
+logging:
+  path: ./logs
+  level:
+    root: info
+    '[com.my]': debug
+

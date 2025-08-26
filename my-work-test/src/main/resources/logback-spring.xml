@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="true" scan="false" scanPeriod="30 seconds">
+	<springProperty scope="context" name="logLevel" source="logging.level" />
+	<springProperty scope="context" name="logPath" source="logging.path" />
+	<springProperty scope="context" name="logName" source="spring.application.name" />
+
+	<appender name="consoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%t] %-5level %c{15} - %msg%n
+			</pattern>
+			<!--<Pattern>.%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg %n</Pattern> -->
+			<!--<pattern>${CONSOLE_LOG_PATTERN}</pattern> -->
+			<charset>UTF-8</charset>
+		</encoder>
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>TRACE</level>
+		</filter>
+	</appender>
+
+
+	<!-- 日志文件输出，如果不定义按spring boot默认输出 -->
+	<appender name="dailyRollingFileAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<File>${logPath}/${logName}.log</File>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${logPath}/${logName}.%d{yyyy-MM-dd}.log.gz</FileNamePattern>
+			
+			<maxHistory>90</maxHistory>
+		</rollingPolicy>
+		<encoder>
+			<Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %c{15} - %msg %n</Pattern>
+			<charset>UTF-8</charset>
+		</encoder>
+	</appender>
+	
+	  <appender name="ErrorDailyFileAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logPath}/err-${logName}.log</file>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %c - %msg %n</pattern>
+            <charset>utf8</charset>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>warn</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+         <FileNamePattern>${logPath}/err-${logName}.%d{yyyy-MM-dd}.log</FileNamePattern>
+            <maxHistory>180</maxHistory>
+        </rollingPolicy>
+    </appender>
+
+	<!-- 生产环境日志级别 -->
+	<root level="${logLevel}">
+		<appender-ref ref="consoleAppender" />
+<!--		<appender-ref ref="dailyRollingFileAppender" />-->
+<!--		<appender-ref ref="ErrorDailyFileAppender" />-->
+	</root>
+
+</configuration>
