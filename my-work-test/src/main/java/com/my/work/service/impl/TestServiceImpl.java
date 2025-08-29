@@ -1,11 +1,15 @@
 package com.my.work.service.impl;
 
+import com.my.work.config.ConfigData;
 import com.my.work.mapper.TestMapper;
+import com.my.work.sec.ECCCrypto;
+import com.my.work.sec.ECCKeyReader;
 import com.my.work.service.TestService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.security.PrivateKey;
 import java.util.Map;
 
 /**
@@ -18,6 +22,11 @@ public class TestServiceImpl implements TestService {
 
     @Autowired
     private TestMapper testMapper;
+
+
+    @Autowired
+    private ConfigData configData;
+
 
     @Override
     public void test() {
@@ -43,5 +52,30 @@ public class TestServiceImpl implements TestService {
         jsonResult = testMapper.testHavepjHaverj(jsonParam);
         log.info("select test_havepj_haverj result: {}", jsonResult);
     }
+
+
+
+    /**
+     * 测试存储日志数据.
+     *
+     * @param requestData
+     */
+    public void saveLogData(String requestData) throws Exception {
+
+        // 请求的字符串，是 json 字符串，加密后的.
+        // 首先需要先做解密的操作.
+        // 读取密钥
+        PrivateKey privateKey = ECCKeyReader.readPrivateKeyFromString(configData.getPrivateKeyPem());
+
+        // 解密
+        String decryptedText = ECCCrypto.decrypt(requestData, privateKey);
+        log.debug("解密后: " + decryptedText);
+
+        // 解密后的 json 字符串，作为参数，调用存储过程.
+        Map<String, Object> jsonResult = testMapper.testHavepjHaverj(decryptedText);
+
+        log.info("saveLogData result: {}", jsonResult);
+    }
+
 
 }

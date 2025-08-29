@@ -5,7 +5,7 @@ server:
 
 spring:
   application:
-    name: user-service22
+    name: test-service
   mvc:
     #解决knife4j版本兼容问题
     pathmatch:
@@ -27,3 +27,18 @@ logging:
     root: info
     '[com.my]': debug
 
+
+my:
+  work:
+    config:
+      privateKeyPem: |
+        -----BEGIN EC PRIVATE KEY-----
+        MHQCAQEEIFUmcJTzQ59/1Am2RS1wdYmPvyVTW9vTBIfXkBYRE/VSoAcGBSuBBAAK  
+        oUQDQgAEMRSbFUksXVsUefZA8KbUbF8YnaaBFazEKPiJ09yf6cVlnf73YgYlWzV0  
+        4RD/KoRUbnqx2S0YFpcKrM+PPMTLwg==
+        -----END EC PRIVATE KEY-----
+      publicKeyPem: |
+        -----BEGIN PUBLIC KEY-----
+        MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEMRSbFUksXVsUefZA8KbUbF8YnaaBFazE  
+        KPiJ09yf6cVlnf73YgYlWzV04RD/KoRUbnqx2S0YFpcKrM+PPMTLwg==
+        -----END PUBLIC KEY-----

@@ -181,24 +181,37 @@ KPiJ09yf6cVlnf73YgYlWzV04RD/KoRUbnqx2S0YFpcKrM+PPMTLwg==
 
 ### 测试方式
 
-测试加密：
+#### 测试加密
 http POST
 http://localhost:8080/test/encrypt
 
 Body 的地方，填写：
-测试使用公钥加密数据
+{"log_text":"这是使用公钥加密的数据"} 
 
 结果返回：
-AFgwVjAQBgcqhkjOPQIBBgUrgQQACgNCAAQz5vJchBGT2zzIcAZ/7vpVBeXJMS6W1mvjIz65U2EcK7XHQROfxB9PxfdU6Qe0vTDVVH1cqgBhNHtqbP4f9Io7AAySZGP2kDKyy00X3khigz19WfvVbxVcERfG5OHztIw70HFYgq+Z9fZpIjWJle1kT+TugnLun5iO8Ki0
+AFgwVjAQBgcqhkjOPQIBBgUrgQQACgNCAAT6sembKQ/RLhvi4xZX4m5g0U+f7EGQuh5g8YCPm1Hq5YCady7DADGbTHcHwfrB259yoJjZeDNhVPKDj5g+mSrmAAzQYUK4Zx/KvV9aDn2mj1Jfe6UOyjIw8E3EDk+Ebc5X2AnERvbbJ0mb/mQETAO5ChYHx6alq9Sj2fpLfjzBBmEZVypwLE6hg7PofHpuMQ==
 
 
-测试解密：
+#### 测试解密
 http POST
+
 http://localhost:8080/test/decrypt
 
 Body 的地方，填写前面的 加密返回的结果。
 
 结果返回：
-测试使用公钥加密数据
+{"log_text":"这是使用公钥加密的数据"}
+
+
+
+#### 测试解密后，调用存储过程.
+http POST 
+
+http://localhost:8080/test/savelog
+
+Body 的地方，填写前面的 加密返回的结果。
+
+预期的结果返回：success
+查看数据库，看看数据是否存储到表当中.
 
 

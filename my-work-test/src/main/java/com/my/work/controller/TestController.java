@@ -123,4 +123,23 @@ public class TestController {
             return e.getMessage();
         }
     }
+
+
+
+    @PostMapping("/savelog")
+    public String saveLogData(@RequestBody String encryptedData) {
+
+        try {
+
+            testService.saveLogData(encryptedData);
+
+            return  "success";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return e.getMessage();
+        }
+    }
+
+
 }

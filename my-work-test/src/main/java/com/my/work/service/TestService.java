@@ -8,4 +8,13 @@ public interface TestService {
 
 
     void test();
+
+
+    /**
+     * 测试存储日志数据.
+     *
+     * @param requestData
+     */
+    void saveLogData(String requestData) throws Exception;
+
 }
