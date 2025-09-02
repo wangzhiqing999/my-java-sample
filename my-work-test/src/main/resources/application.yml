@@ -31,6 +31,7 @@ logging:
 my:
   work:
     config:
+      # 注意：这里是用来演示的私钥与公钥，实际使用的时候，需要自己使用 openssl 去创建一套来使用，而不是无脑地复制下面的。
       privateKeyPem: |
         -----BEGIN EC PRIVATE KEY-----
         MHQCAQEEIFUmcJTzQ59/1Am2RS1wdYmPvyVTW9vTBIfXkBYRE/VSoAcGBSuBBAAK  

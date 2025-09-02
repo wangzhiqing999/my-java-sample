@@ -1,5 +1,6 @@
 package com.my.work.controller;
 
+import com.my.work.config.ConfigData;
 import com.my.work.sec.ECCCrypto;
 import com.my.work.sec.ECCKeyReader;
 import com.my.work.service.TestService;
@@ -23,6 +24,10 @@ public class TestController {
     private TestService testService;
 
 
+    @Autowired
+    private ConfigData configData;
+
+
     /**
      * 单纯的测试.
      * @return
@@ -35,27 +40,6 @@ public class TestController {
 
 
 
-
-    /**
-     * 测试的 ECC 的私钥.
-     *
-     * 注意：这里是测试的密钥， 实际使用时， 请参考 readme.md 中的命令， 使用 openssl， 生成新的 私钥与公钥。
-     */
-    private static String privateKeyPem = "-----BEGIN EC PRIVATE KEY-----\n" +
-            "MHQCAQEEIFUmcJTzQ59/1Am2RS1wdYmPvyVTW9vTBIfXkBYRE/VSoAcGBSuBBAAK\n" +
-            "oUQDQgAEMRSbFUksXVsUefZA8KbUbF8YnaaBFazEKPiJ09yf6cVlnf73YgYlWzV0\n" +
-            "4RD/KoRUbnqx2S0YFpcKrM+PPMTLwg==\n" +
-            "-----END EC PRIVATE KEY-----";
-
-    /**
-     * 测试的 ECC 的公钥.
-     *
-     * 注意：这里是测试的密钥， 实际使用时， 请参考 readme.md 中的命令， 使用 openssl， 生成新的 私钥与公钥。
-     */
-    String publicKeyPem = "-----BEGIN PUBLIC KEY-----\n" +
-            "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEMRSbFUksXVsUefZA8KbUbF8YnaaBFazE\n" +
-            "KPiJ09yf6cVlnf73YgYlWzV04RD/KoRUbnqx2S0YFpcKrM+PPMTLwg==\n" +
-            "-----END PUBLIC KEY-----";
 
 
     /**
@@ -72,7 +56,7 @@ public class TestController {
 
         try {
             // 读取密钥
-            PublicKey publicKey = ECCKeyReader.readPublicKeyFromString(publicKeyPem);
+            PublicKey publicKey = ECCKeyReader.readPublicKeyFromString(configData.getPublicKeyPem());
 
 
             System.out.println("原始文本: " + originalText);
@@ -108,7 +92,7 @@ public class TestController {
         try {
             // encryptedData 就是加密后的数据（可能是Base64编码的字符串）
             // 读取密钥
-            PrivateKey privateKey = ECCKeyReader.readPrivateKeyFromString(privateKeyPem);
+            PrivateKey privateKey = ECCKeyReader.readPrivateKeyFromString(configData.getPrivateKeyPem());
 
             // 后续可以进行解密处理
 
@@ -125,7 +109,11 @@ public class TestController {
     }
 
 
-
+    /**
+     * 测试一个 先解密， 后调用存储过程的处理.
+     * @param encryptedData
+     * @return
+     */
     @PostMapping("/savelog")
     public String saveLogData(@RequestBody String encryptedData) {
 
