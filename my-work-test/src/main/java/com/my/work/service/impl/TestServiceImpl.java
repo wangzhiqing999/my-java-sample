@@ -78,4 +78,15 @@ public class TestServiceImpl implements TestService {
     }
 
 
+
+    /**
+     * 测试的， 每天定时执行的任务.
+     * @return
+     */
+    public String dailyTask() {
+        log.info("执行每日任务逻辑...");
+        return "任务执行成功";
+    }
+
+
 }

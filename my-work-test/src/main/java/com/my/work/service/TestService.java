@@ -17,4 +17,11 @@ public interface TestService {
      */
     void saveLogData(String requestData) throws Exception;
 
+
+    /**
+     * 测试的， 每天定时执行的任务.
+     * @return
+     */
+    String dailyTask();
+
 }

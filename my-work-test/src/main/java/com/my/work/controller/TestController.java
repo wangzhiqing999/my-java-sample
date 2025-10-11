@@ -5,10 +5,7 @@ import com.my.work.sec.ECCCrypto;
 import com.my.work.sec.ECCKeyReader;
 import com.my.work.service.TestService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -129,5 +126,16 @@ public class TestController {
         }
     }
 
+
+    /**
+     * 测试被定时调用的接口
+     * @return
+     */
+    @GetMapping("/daily-task")
+    public String dailyTask() {
+
+        // 调用服务，完成 需要定时执行的任务.
+        return testService.dailyTask();
+    }
 
 }
