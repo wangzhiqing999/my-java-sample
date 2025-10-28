@@ -4,6 +4,8 @@ server:
     context-path:
 
 spring:
+  profiles:
+    active: clientA  # 改为 clientB 则注入 ClientBServiceImpl
   application:
     name: test-service
   mvc:

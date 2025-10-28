@@ -3,6 +3,7 @@ package com.my.work.controller;
 import com.my.work.config.ConfigData;
 import com.my.work.sec.ECCCrypto;
 import com.my.work.sec.ECCKeyReader;
+import com.my.work.service.ClientService;
 import com.my.work.service.TestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,14 @@ public class TestController {
 
     @Autowired
     private ConfigData configData;
+
+
+    /**
+     * 注意：这个服务，是有多个实现的，具体使用哪一个实现，配置在 application.yml 文件中的 spring-->profiles-->active 下面.
+     */
+    @Autowired
+    private ClientService clientService;
+
 
 
     /**
@@ -137,5 +146,35 @@ public class TestController {
         // 调用服务，完成 需要定时执行的任务.
         return testService.dailyTask();
     }
+
+
+
+
+
+
+    /**
+     * 测试的，相同接口，不同实现的处理.
+     * 如果更换其它实现的情况下，需要修改 application.yml 配置文件.
+     * 配置在 application.yml 文件中的 spring-->profiles-->active 下面.
+     *
+     *
+     * 测试的机制，
+     * 先启动项目，然后访问 http://localhost:8080/test/info
+     * 得到的是 客户A 的实现。
+     *
+     *
+     * 停止项目，application.yml 文件中的 spring-->profiles-->active 修改为 clientB
+     * 再运行项目， 刷新 http://localhost:8080/test/info
+     * 得到的是 客户B 的实现。
+     *
+     * 也就是一套代码， 发布给不同的客户使用，  不同的客户， 又有其自己特有的 业务逻辑， 通过不同的实现，以及配置文件， 来完成， 发布到不同的客户那里，实现特定客户的功能。
+     *
+     * @return
+     */
+    @GetMapping("/info")
+    public String getClientInfo() {
+        return clientService.getClientInfo();
+    }
+
 
 }
