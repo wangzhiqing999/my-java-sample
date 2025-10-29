@@ -148,6 +148,16 @@ public class TestController {
     }
 
 
+    /**
+     * 测试默认的配置.
+     * 也就是：配置的类里面，定义了属性的初始数值， 但是在配置文件中， 没有定义属性的值。
+     * 系统在默认情况下，能正常运行，要具体做调整的时候，再修改配置文件， 针对特定的属性，进行修改配置.
+     * @return
+     */
+    @GetMapping("/config")
+    public String testConfig() {
+        return testService.testConfig();
+    }
 
 
 

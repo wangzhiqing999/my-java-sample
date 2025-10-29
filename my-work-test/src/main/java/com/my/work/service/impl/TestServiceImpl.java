@@ -89,4 +89,32 @@ public class TestServiceImpl implements TestService {
     }
 
 
+
+    /**
+     * 测试业务逻辑，在配置文件中定义的情况.
+     * @return
+     */
+    public String testConfig() {
+
+        StringBuilder sb = new StringBuilder();
+
+        // 配置文件里面，没有设置属性的，使用 类里面写的默认值.
+        sb.append("testBooleanDefaultValue = ");
+        sb.append(configData.isTestBooleanDefaultValue());
+        sb.append("; testIntDefaultValue = ");
+        sb.append(configData.getTestIntDefaultValue());
+        sb.append("; testStringDefaultValue = ");
+        sb.append(configData.getTestStringDefaultValue());
+
+        // 配置文件里面，设置属性了，使用配置文件中的数值.
+        sb.append(";\r\ntestBooleanDefaultValue2 = ");
+        sb.append(configData.isTestBooleanDefaultValue2());
+        sb.append("; testIntDefaultValue2 = ");
+        sb.append(configData.getTestIntDefaultValue2());
+        sb.append("; testStringDefaultValue2 = ");
+        sb.append(configData.getTestStringDefaultValue2());
+
+        return sb.toString();
+    }
+
 }

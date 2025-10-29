@@ -45,3 +45,6 @@ my:
         MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEMRSbFUksXVsUefZA8KbUbF8YnaaBFazE  
         KPiJ09yf6cVlnf73YgYlWzV04RD/KoRUbnqx2S0YFpcKrM+PPMTLwg==
         -----END PUBLIC KEY-----
+      testBooleanDefaultValue2: false
+      testIntDefaultValue2: 2048
+      testStringDefaultValue2: new config value

@@ -24,4 +24,11 @@ public interface TestService {
      */
     String dailyTask();
 
+
+    /**
+     * 测试业务逻辑，在配置文件中定义的情况.
+     * @return
+     */
+    String testConfig();
+
 }
