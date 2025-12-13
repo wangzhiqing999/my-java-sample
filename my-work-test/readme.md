@@ -137,6 +137,78 @@ $function$
 ```
 
 
+
+### 测试的 配置表的功能.
+
+```
+
+CREATE TABLE common_config (
+	config_code		VARCHAR(32) 	NOT NULL,
+	config_desc		VARCHAR(256),
+	config_value	JSON,
+	
+	ctime timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	utime timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	CONSTRAINT common_config_pkey PRIMARY KEY (config_code)
+);
+
+COMMENT ON TABLE common_config IS '通用配置表';
+
+COMMENT ON COLUMN common_config.config_code IS '配置代码';
+COMMENT ON COLUMN common_config.config_desc IS '配置描述';
+COMMENT ON COLUMN common_config.config_value IS '配置值';
+
+COMMENT ON COLUMN common_config.ctime IS '配置创建时间';
+COMMENT ON COLUMN common_config.utime IS '配置更新时间';
+
+```
+
+```
+
+CREATE OR REPLACE FUNCTION fn_save_config(p_code VARCHAR(32), p_value JSON)
+RETURNS void
+LANGUAGE plpgsql
+AS 
+$function$
+BEGIN
+	INSERT INTO common_config (
+		config_code, config_desc, config_value
+	) VALUES (
+		p_code, '-', p_value
+	)
+	ON CONFLICT (config_code)
+	DO UPDATE 
+	SET 
+		config_value = p_value, 
+		utime=CURRENT_TIMESTAMP;
+END;
+$function$
+;
+
+
+CREATE OR REPLACE FUNCTION fn_get_config(p_code VARCHAR(32))
+RETURNS JSON
+LANGUAGE plpgsql
+AS 
+$function$
+DECLARE
+	v_result	JSON;
+BEGIN
+	SELECT
+		config_value INTO v_result
+	FROM
+		common_config
+	WHERE
+		config_code = p_code;		
+	RETURN v_result;
+END;
+$function$
+;
+
+```
+
+
+
 ### 测试方式
 http GET
 http://localhost:8080/test/get

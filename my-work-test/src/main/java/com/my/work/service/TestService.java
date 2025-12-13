@@ -1,5 +1,7 @@
 package com.my.work.service;
 
+import com.my.work.model.CommonResult;
+
 /**
  * 单纯的测试服务.
  * 给后续的业务， 提供一个参考的结构.
@@ -30,5 +32,22 @@ public interface TestService {
      * @return
      */
     String testConfig();
+
+
+
+    /**
+     * 测试保存配置信息.
+     * @param code
+     * @param data
+     */
+    void testSaveConfig(String code, CommonResult data);
+
+
+    /**
+     * 测试获取配置信息.
+     * @param code
+     * @return
+     */
+    CommonResult testLoadConfig(String code);
 
 }

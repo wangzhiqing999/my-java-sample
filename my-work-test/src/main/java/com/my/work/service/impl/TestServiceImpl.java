@@ -2,9 +2,11 @@ package com.my.work.service.impl;
 
 import com.my.work.config.ConfigData;
 import com.my.work.mapper.TestMapper;
+import com.my.work.model.CommonResult;
 import com.my.work.sec.ECCCrypto;
 import com.my.work.sec.ECCKeyReader;
 import com.my.work.service.TestService;
+import com.my.work.util.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -116,5 +118,38 @@ public class TestServiceImpl implements TestService {
 
         return sb.toString();
     }
+
+
+
+    public void testSaveConfig(String code, CommonResult data) {
+        try {
+            String json = JsonUtil.toJson(data);
+
+            testMapper.fn_save_config(code, json);
+
+        } catch (Exception ex){
+            log.error("保存配置信息发生错误...", ex);
+        }
+    }
+
+
+    /**
+     * 测试获取配置信息.
+     * @param code
+     * @return
+     */
+    public CommonResult testLoadConfig(String code) {
+
+        try {
+            String resultText = testMapper.fn_get_config(code);
+            CommonResult result = JsonUtil.objectMapper.readValue(resultText, CommonResult.class);
+            return result;
+        } catch (Exception ex){
+            log.error("保存配置信息发生错误...", ex);
+            return null;
+        }
+
+    }
+
 
 }

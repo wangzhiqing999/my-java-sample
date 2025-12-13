@@ -1,6 +1,7 @@
 package com.my.work.controller;
 
 import com.my.work.config.ConfigData;
+import com.my.work.model.CommonResult;
 import com.my.work.sec.ECCCrypto;
 import com.my.work.sec.ECCKeyReader;
 import com.my.work.service.ClientService;
@@ -42,6 +43,34 @@ public class TestController {
     public String get() {
         testService.test();
         return "success";
+    }
+
+
+    /**
+     * 测试保存配置信息.
+     * http://localhost:8080/test/saveconfig?code=1&msg=test_message
+     * @param code
+     * @param msg
+     * @return
+     */
+    @RequestMapping("/saveconfig")
+    public String saveConfig(int code, String msg) {
+        CommonResult testData = new CommonResult();
+        testData.setCode(code);
+        testData.setMsg(msg);
+        testService.testSaveConfig("TEST", testData);
+        return "success";
+    }
+
+    /**
+     * 测试保存配置信息.
+     * http://localhost:8080/test/readconfig
+     * @return
+     */
+    @RequestMapping("/readconfig")
+    public String readConfig() {
+        CommonResult testData = testService.testLoadConfig("TEST");
+        return testData.getMsg();
     }
 
 

@@ -63,4 +63,23 @@ public interface TestMapper {
     @Select("select test_havepj_haverj(#{logData}::json)")
     Map<String, Object> testHavepjHaverj(@Param("logData") String logData);
 
+
+
+    /**
+     * 保存配置信息.
+     * @param p_code
+     * @param p_value
+     */
+    @Update("SELECT fn_save_config(#{p_code}, #{p_value}::json)")
+    void fn_save_config(@Param("p_code") String p_code, @Param("p_value") String p_value);
+
+
+    /**
+     * 获取配置信息.
+     * @param p_code
+     * @return
+     */
+    @Select("select fn_get_config(#{p_code})")
+    String fn_get_config(@Param("p_code") String p_code);
+
 }
