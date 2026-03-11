@@ -47,9 +47,14 @@
         </rollingPolicy>
     </appender>
 
+
 	<!-- 生产环境日志级别 -->
 	<root level="${logLevel}">
+
+		<!-- 开发的机器上，使用这个 -->
 		<appender-ref ref="consoleAppender" />
+
+		<!-- 服务器上，使用这个. -->
 <!--		<appender-ref ref="dailyRollingFileAppender" />-->
 <!--		<appender-ref ref="ErrorDailyFileAppender" />-->
 	</root>

@@ -6,6 +6,7 @@ import com.my.work.sec.ECCCrypto;
 import com.my.work.sec.ECCKeyReader;
 import com.my.work.service.ClientService;
 import com.my.work.service.TestService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +18,7 @@ import java.security.PublicKey;
  */
 @RestController
 @RequestMapping("/test")
+@Slf4j
 public class TestController {
 
     @Autowired
@@ -102,7 +104,8 @@ public class TestController {
             return encryptedText;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("encrypt error!", e);
+
             return e.getMessage();
         }
 
@@ -138,7 +141,8 @@ public class TestController {
             return decryptedText;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("decrypt error!", e);
+
             return e.getMessage();
         }
     }
@@ -152,6 +156,8 @@ public class TestController {
     @PostMapping("/savelog")
     public String saveLogData(@RequestBody String encryptedData) {
 
+        log.debug("/savelog start!");
+
         try {
 
             testService.saveLogData(encryptedData);
@@ -159,7 +165,8 @@ public class TestController {
             return  "success";
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("save log error!", e);
+
             return e.getMessage();
         }
     }
@@ -185,6 +192,9 @@ public class TestController {
      */
     @GetMapping("/config")
     public String testConfig() {
+
+        log.debug("/config start!");
+
         return testService.testConfig();
     }
 
@@ -212,6 +222,9 @@ public class TestController {
      */
     @GetMapping("/info")
     public String getClientInfo() {
+
+        log.debug("/info start!");
+
         return clientService.getClientInfo();
     }
 
