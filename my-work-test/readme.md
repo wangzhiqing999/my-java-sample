@@ -307,3 +307,68 @@ Body 的地方，填写前面的 加密返回的结果。
 注意：测试的时候，是每分钟调用一次， 实际使用中，需要时情况，进行修改.
 
 
+
+
+
+
+## Profile
+
+### 一个接口，多个实现的配置.
+
+一套接口，不同的客户，有不同的实现代码。
+例如项目中的 ClientService 接口。
+有如下两个客户的实现：ClientAServiceImpl，ClientBServiceImpl
+类的定义如下：
+```
+@Service
+@Profile("clientA")
+public class ClientAServiceImpl implements ClientService {
+   ...
+}
+
+@Service
+@Profile("clientB")
+public class ClientBServiceImpl  implements ClientService {
+   ...
+}
+```
+
+在 application.yml 文件中
+```
+spring:
+  profiles:
+    active: clientA
+```
+则运行时，启用 ClientAServiceImpl 的实现.
+
+
+
+### 两个接口，多个实现的配置.
+
+例如项目中的 ClientService，OtherClientService 接口。
+
+新的类的定义如下：
+```
+@Service
+@Profile("otherClientC")
+public class OtherClientCServiceImpl implements OtherClientService {
+   ...
+}
+
+@Service
+@Profile("otherClientD")
+public class OtherClientDServiceImpl implements OtherClientService  {
+   ...
+}
+```
+
+
+在 application.yml 文件中
+```
+spring:
+  profiles:
+    active: clientA,otherClientC
+```
+则运行时，启用 ClientAServiceImpl 与 OtherClientCServiceImpl 的实现.
+
+

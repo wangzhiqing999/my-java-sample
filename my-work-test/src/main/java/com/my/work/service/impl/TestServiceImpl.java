@@ -1,5 +1,6 @@
 package com.my.work.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.my.work.config.ConfigData;
 import com.my.work.mapper.TestMapper;
 import com.my.work.model.CommonResult;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.security.PrivateKey;
 import java.util.Map;
+
+import static com.my.work.util.JsonUtil.objectMapper;
 
 /**
  * 单纯的测试服务.
@@ -46,13 +49,50 @@ public class TestServiceImpl implements TestService {
         Long id = testMapper.testHavepHaver("Java 调用");
         log.info("select test_havep_haver result: {}", id);
 
+
+
         Map<String, Object> jsonResult = testMapper.testHavepHaverj("Java 调用");
         log.info("select test_havep_haverj result: {}", jsonResult);
+        for (Map.Entry<String, Object> entry : jsonResult.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+
+            // 判空，避免空指针
+            if (value == null) {
+                log.info("Key: {}, Value: null", key);
+                continue;
+            }
+
+            try {
+                // 将 JSON 字符串解析为 JsonNode 对象
+                JsonNode jsonNode = objectMapper.readTree(value.toString());
+
+                // 提取指定字段的值
+                int code = jsonNode.get("code").asInt(); // 数字类型用 asInt()
+                String msg = jsonNode.get("msg").asText(); // 字符串类型用 asText()
+                int id2 = jsonNode.get("id").asInt();
+
+                // 输出解析后的字段值
+                log.info("Key: {}", key);
+                log.info("  code: {}", code);
+                log.info("  msg: {}", msg);
+                log.info("  id: {}", id2);
+            } catch (Exception e) {
+                // 解析失败时的异常处理
+                log.error("解析 JSON 失败，原始值：{}", value, e);
+            }
+        }
+
+
+
 
 
         String jsonParam = "{\"log_text\":\"这是一条测试日志\"}";
         jsonResult = testMapper.testHavepjHaverj(jsonParam);
         log.info("select test_havepj_haverj result: {}", jsonResult);
+
+
     }
 
 
@@ -142,7 +182,7 @@ public class TestServiceImpl implements TestService {
 
         try {
             String resultText = testMapper.fn_get_config(code);
-            CommonResult result = JsonUtil.objectMapper.readValue(resultText, CommonResult.class);
+            CommonResult result = objectMapper.readValue(resultText, CommonResult.class);
             return result;
         } catch (Exception ex){
             log.error("保存配置信息发生错误...", ex);

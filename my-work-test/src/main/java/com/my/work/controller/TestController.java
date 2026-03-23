@@ -5,6 +5,7 @@ import com.my.work.model.CommonResult;
 import com.my.work.sec.ECCCrypto;
 import com.my.work.sec.ECCKeyReader;
 import com.my.work.service.ClientService;
+import com.my.work.service.OtherClientService;
 import com.my.work.service.TestService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 简单的、测试用的控制器.
@@ -34,6 +37,13 @@ public class TestController {
      */
     @Autowired
     private ClientService clientService;
+
+
+    /**
+     * 注意：这个服务，是有多个实现的，具体使用哪一个实现，配置在 application.yml 文件中的 spring-->profiles-->active 下面.
+     */
+    @Autowired
+    private OtherClientService otherClientService;
 
 
 
@@ -227,6 +237,57 @@ public class TestController {
 
         return clientService.getClientInfo();
     }
+
+
+
+
+    @GetMapping("/otherinfo")
+    public String getOtherClientInfo() {
+
+        log.debug("/otherinfo start!");
+
+        return otherClientService.getClientInfo();
+    }
+
+
+    /**
+     * 假设我这套系统， 一开始， 是为 甲行业做的。
+     * 定义了  甲行业的接口： ClientService
+     * 为 甲行业的两家公司， 分别写了实现： ClientAServiceImpl， ClientBServiceImpl
+     *
+     *
+     * 现在，业务拓展了， 准备为  相似的 乙行业写。
+     * 定义了  乙行业的接口： OtherClientService
+     * 为 乙行业的两家公司， 分别写了实现： OtherClientCServiceImpl， OtherClientDServiceImpl
+     *
+     *
+     * 处理的时候， 可能是需要使用 甲行业的 部分代码， 又要使用 乙行业的部分代码.
+     *
+     * 测试的机制，
+     * 先启动项目，然后访问 http://localhost:8080/test/both
+     * 得到的是 甲行业 客户A 的实现 + 乙行业 客户C 的实现。
+     *
+     *
+     * 停止项目，application.yml 文件中的 spring-->profiles-->active 修改为 clientB,otherClientEmpty
+     * 得到的是 甲行业 客户B 的实现 +  乙行业 的空白实现。
+     *
+     * @return
+     */
+    @GetMapping("/both")
+    public String getBoth() {
+
+        log.debug("/both start!");
+
+        List<String> resultList = clientService.getTodoList();
+        List<String> otherResultList = otherClientService.getTodoList("test");
+
+        List<String> todoList = new ArrayList<>();
+        todoList.addAll(resultList);
+        todoList.addAll(otherResultList);
+
+        return String.join(",", todoList);
+    }
+
 
 
 }
