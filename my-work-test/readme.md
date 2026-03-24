@@ -79,6 +79,37 @@ $function$
 ```
 
 
+### 有参数，有返回值，参数是数组.
+
+```
+CREATE OR REPLACE FUNCTION public.test_sum_array(p_datas INT[]) 
+RETURNS INT
+LANGUAGE plpgsql
+AS 
+$function$
+DECLARE 
+  -- 循环时使用的临时变量.
+  i		INT;
+  
+  -- 处理结果.
+  v_result INT;
+BEGIN
+
+  v_result := 0;
+  
+  FOR i IN 1..array_length(p_datas, 1) LOOP
+    v_result := v_result + p_datas[i];
+  END LOOP;
+  
+  RETURN v_result;
+END;
+$function$
+;
+
+```
+
+
+
 
 ### 有参数，有返回值，返回值的类型是 json.
 

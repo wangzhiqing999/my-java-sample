@@ -93,6 +93,12 @@ public class TestServiceImpl implements TestService {
         log.info("select test_havepj_haverj result: {}", jsonResult);
 
 
+
+        int[] testDatas = {1, 2, 3, 4};
+        int result = testMapper.test_sum_array(testDatas);
+        log.info("test_sum_array( 1,2,3,4 ) = {}", result);
+
+
     }
 
 

@@ -64,6 +64,16 @@ public interface TestMapper {
     Map<String, Object> testHavepjHaverj(@Param("logData") String logData);
 
 
+    /**
+     * 调用 test_sum_array 函数， 参数是一个数组.
+     * @param datas
+     * @return
+     */
+    @Select("SELECT test_sum_array(#{datas})")
+    int test_sum_array(int[] datas);
+
+
+
 
     /**
      * 保存配置信息.
