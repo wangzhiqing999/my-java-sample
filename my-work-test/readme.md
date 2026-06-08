@@ -248,6 +248,18 @@ http://localhost:8080/test/get
 
 
 
+
+## 服务器当前版本.
+http://localhost:8080/test/version
+
+
+
+## 服务器当前健康状况.
+http://localhost:8080/test/health
+
+
+
+
 ## AI 生成 ECC 加密、解密Java代码 的提示词
 
 

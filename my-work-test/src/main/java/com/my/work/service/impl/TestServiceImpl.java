@@ -12,7 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.security.PrivateKey;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.my.work.util.JsonUtil.objectMapper;
@@ -101,6 +104,24 @@ public class TestServiceImpl implements TestService {
 
     }
 
+
+    @Override
+    public Map<String, Object> health() {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            int n = testMapper.selectTest();
+            result.put("status", "UP");
+            result.put("message", "health");
+        } catch (Exception e) {
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+
+            result.put("status", "DOWN");
+            result.put("error", e.getMessage());
+            result.put("stackTrace", sw.toString()); // 完整堆栈
+        }
+        return result;
+    }
 
 
     /**

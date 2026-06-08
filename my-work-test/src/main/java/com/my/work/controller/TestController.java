@@ -7,14 +7,20 @@ import com.my.work.sec.ECCKeyReader;
 import com.my.work.service.ClientService;
 import com.my.work.service.OtherClientService;
 import com.my.work.service.TestService;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 /**
  * 简单的、测试用的控制器.
@@ -56,6 +62,69 @@ public class TestController {
         testService.test();
         return "success";
     }
+
+
+    /**
+     * 获取项目版本信息
+     * @return 包含版本号的响应体
+     */
+    @GetMapping("/version")
+    public VersionResponse getVersion() {
+        // 读取MANIFEST.MF文件
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("META-INF/MANIFEST.MF")) {
+            if (is == null) {
+                return new VersionResponse("unknown", "test-service");
+            }
+
+            Manifest manifest = new Manifest(is);
+            Attributes attributes = manifest.getMainAttributes();
+
+            // 获取自定义的版本和项目名称
+            String version = attributes.getValue("Project-Version");
+            String name = attributes.getValue("Project-Name");
+
+            // 兜底处理（防止读取失败）
+            version = version != null ? version : "unknown";
+            name = name != null ? name : "test-service";
+
+            VersionResponse result =  new VersionResponse(version, name);
+            return result;
+
+        } catch (IOException e) {
+            // 异常时返回默认值
+            return new VersionResponse("unknown", "test-service");
+        }
+    }
+
+    /**
+     * 响应体实体类
+     */
+    @Data
+    public static class VersionResponse {
+        private String version;
+        private String projectName;
+
+        // 构造函数
+        public VersionResponse(String version, String projectName) {
+            this.version = version;
+            this.projectName = projectName;
+        }
+    }
+
+
+
+
+    /**
+     * 健康监测.
+     * @return
+     */
+    @GetMapping("/health")
+    public Map<String, Object> health() {
+        return testService.health();
+    }
+
+
+
 
 
     /**
@@ -287,6 +356,11 @@ public class TestController {
 
         return String.join(",", todoList);
     }
+
+
+
+
+
 
 
 
