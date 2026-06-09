@@ -415,3 +415,37 @@ spring:
 则运行时，启用 ClientAServiceImpl 与 OtherClientCServiceImpl 的实现.
 
 
+
+
+
+## 发布到 Docker 上.
+
+首先，本项目打包，获得结果的 jar 文件.
+目的是，编译操作，本地做了， 就不在 Docker 那里，再做编译的操作。
+
+
+### 复制文件到服务器上.
+application.yml
+Dockerfile
+test-service-1.0-SNAPSHOT.jar.jar
+
+### 构建 Docker 镜像.
+```
+docker build -t test-service:1.0 .
+``` 
+
+### 运行 Docker 容器.
+```
+docker run -d \
+  --name test-service \
+  -p 8081:8080 \
+  --add-host=pve003:192.168.1.103 \
+  -v ${PWD}/application.yml:/app/config/application.yml \
+  --restart=always \
+  test-service:1.0
+```
+
+注意：--add-host=pve003:192.168.1.103 的作用，是因为配置文件中，数据库的地址，写的是局域网的机器名。
+这里是让容器知道，遇到 pve003 这样的机器名的时候，应该访问哪一个 ip 地址.
+
+
