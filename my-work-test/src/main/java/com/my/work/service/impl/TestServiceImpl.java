@@ -1,6 +1,6 @@
 package com.my.work.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.my.work.config.ConfigData;
 import com.my.work.mapper.TestMapper;
 import com.my.work.model.CommonResult;
@@ -18,7 +18,7 @@ import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.my.work.util.JsonUtil.objectMapper;
+import static com.my.work.util.JsonUtil.OBJECT_MAPPER;
 
 /**
  * 单纯的测试服务.
@@ -69,7 +69,7 @@ public class TestServiceImpl implements TestService {
 
             try {
                 // 将 JSON 字符串解析为 JsonNode 对象
-                JsonNode jsonNode = objectMapper.readTree(value.toString());
+                JsonNode jsonNode = OBJECT_MAPPER.readTree(value.toString());
 
                 // 提取指定字段的值
                 int code = jsonNode.get("code").asInt(); // 数字类型用 asInt()
@@ -209,7 +209,7 @@ public class TestServiceImpl implements TestService {
 
         try {
             String resultText = testMapper.fn_get_config(code);
-            CommonResult result = objectMapper.readValue(resultText, CommonResult.class);
+            CommonResult result = OBJECT_MAPPER.readValue(resultText, CommonResult.class);
             return result;
         } catch (Exception ex){
             log.error("保存配置信息发生错误...", ex);
