@@ -27,7 +27,8 @@ spring:
 mybatis:
   mapper-locations: classpath*:db/*.xml
 logging:
-  path: ./logs
+  file:
+    path: ./logs
   level:
     root: info
     '[com.my]': debug
