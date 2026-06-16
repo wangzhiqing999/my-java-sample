@@ -449,3 +449,27 @@ docker run -d \
 这里是让容器知道，遇到 pve003 这样的机器名的时候，应该访问哪一个 ip 地址.
 
 
+
+
+## 升级到 spring-boot 4.1.0
+
+### 复制文件到服务器上.
+application.yml
+Dockerfile
+test-service-1.1-SNAPSHOT.jar.jar
+
+### 构建 Docker 镜像.
+```
+docker build -t test-service:1.1 .
+``` 
+
+### 运行 Docker 容器.
+```
+docker run -d \
+  --name test-service \
+  -p 8081:8080 \
+  --add-host=pve003:192.168.1.103 \
+  -v ${PWD}/application.yml:/app/config/application.yml \
+  --restart=always \
+  test-service:1.1
+```

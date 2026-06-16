@@ -1,11 +1,16 @@
 # 使用轻量级 JRE 17 基础镜像
-FROM eclipse-temurin:17-jre-alpine
+# FROM eclipse-temurin:17-jre-alpine
+
+# spring-boot 升级到 4.1 之后.
+# JDK 需要升级到 21
+FROM eclipse-temurin:21-jdk-alpine
+
 
 # 工作目录
 WORKDIR /app
 
 # 把打包好的 jar 复制到镜像中
-COPY test-service-1.0-SNAPSHOT.jar /app/app.jar
+COPY test-service-1.1-SNAPSHOT.jar /app/app.jar
 
 # 暴露应用端口（根据你的 application.yml 中配置的端口修改，默认 8080）
 EXPOSE 8080
