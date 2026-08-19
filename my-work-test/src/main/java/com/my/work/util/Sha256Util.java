@@ -7,7 +7,10 @@ import java.security.NoSuchAlgorithmException;
  * SHA256 哈希工具类
  * 计算字符串的 SHA256 哈希值（64位十六进制字符串）
  */
-public class Sha256Util {
+public final class Sha256Util {
+
+    private Sha256Util() {
+    }
 
     /**
      * 计算字符串的 SHA256 哈希值（64位十六进制字符串）

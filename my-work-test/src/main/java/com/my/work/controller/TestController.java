@@ -8,6 +8,7 @@ import com.my.work.sec.ECCKeyReader;
 import com.my.work.service.ClientService;
 import com.my.work.service.OtherClientService;
 import com.my.work.service.TestService;
+import com.my.work.util.JsonUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,13 @@ import java.util.jar.Manifest;
 
 /**
  * 简单的、测试用的控制器.
+ *
+ * <p>所有接口统一返回 {@link CommonResult}（M-P1-2 修复）：
+ * <ul>
+ *   <li>成功：code=200，msg="success"，data=业务数据（对象/字符串 JSON 序列化后放入）</li>
+ *   <li>业务无返回值：data=null</li>
+ *   <li>异常：由 {@code GlobalExceptionHandler} 统一兜底，返回 code=400 或 500</li>
+ * </ul>
  */
 @RestController
 @RequestMapping("/test")
@@ -33,44 +41,64 @@ public class TestController {
 
     private final TestService testService;
 
-
     private final ConfigData configData;
-
 
     /**
      * 注意：这个服务，是有多个实现的，具体使用哪一个实现，配置在 application.yml 文件中的 spring-->profiles-->active 下面.
      */
     private final ClientService clientService;
 
-
     /**
      * 注意：这个服务，是有多个实现的，具体使用哪一个实现，配置在 application.yml 文件中的 spring-->profiles-->active 下面.
      */
     private final OtherClientService otherClientService;
 
+    /** 成功响应码. */
+    private static final int CODE_SUCCESS = 200;
+    /** 成功消息. */
+    private static final String MSG_SUCCESS = "success";
 
+    /**
+     * 构造成功响应（无数据）.
+     */
+    private CommonResult success() {
+        return new CommonResult(CODE_SUCCESS, MSG_SUCCESS);
+    }
+
+    /**
+     * 构造成功响应（字符串数据，直接放入 data）.
+     */
+    private CommonResult success(String data) {
+        return new CommonResult(CODE_SUCCESS, MSG_SUCCESS, data);
+    }
+
+    /**
+     * 构造成功响应（对象数据，序列化为 JSON 字符串后放入 data）.
+     */
+    private CommonResult success(Object data) {
+        return new CommonResult(CODE_SUCCESS, MSG_SUCCESS, JsonUtil.toJson(data));
+    }
 
     /**
      * 单纯的测试.
-     * @return
+     * @return 统一响应体
      */
     @GetMapping("/get")
-    public String get() {
+    public CommonResult get() {
         testService.test();
-        return "success";
+        return success();
     }
-
 
     /**
      * 获取项目版本信息
      * @return 包含版本号的响应体
      */
     @GetMapping("/version")
-    public VersionResponse getVersion() {
+    public CommonResult getVersion() {
         // 读取MANIFEST.MF文件
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("META-INF/MANIFEST.MF")) {
             if (is == null) {
-                return new VersionResponse("unknown", "test-service");
+                return success(new VersionResponse("unknown", "test-service"));
             }
 
             Manifest manifest = new Manifest(is);
@@ -84,58 +112,47 @@ public class TestController {
             version = version != null ? version : "unknown";
             name = name != null ? name : "test-service";
 
-            VersionResponse result =  new VersionResponse(version, name);
-            return result;
-
+            return success(new VersionResponse(version, name));
         } catch (IOException e) {
             // 异常时返回默认值
-            return new VersionResponse("unknown", "test-service");
+            return success(new VersionResponse("unknown", "test-service"));
         }
     }
 
     /**
      * 健康监测.
-     * @return
+     * @return 统一响应体，data 为健康状态信息（JSON 序列化）
      */
     @GetMapping("/health")
-    public Map<String, Object> health() {
-        return testService.health();
+    public CommonResult health() {
+        return success(testService.health());
     }
-
-
-
-
 
     /**
      * 测试保存配置信息.
      * http://localhost:8080/test/save-config?code=1&msg=test_message
-     * @param code
-     * @param msg
-     * @return
+     * @param code 配置编码
+     * @param msg  配置消息
+     * @return 统一响应体
      */
     @PostMapping("/save-config")
-    public String saveConfig(int code, String msg) {
+    public CommonResult saveConfig(int code, String msg) {
         CommonResult testData = new CommonResult();
         testData.setCode(code);
         testData.setMsg(msg);
         testService.testSaveConfig("TEST", testData);
-        return "success";
+        return success();
     }
 
     /**
      * 测试保存配置信息.
      * http://localhost:8080/test/read-config
-     * @return
+     * @return 统一响应体，data 为配置信息（JSON 序列化）
      */
     @GetMapping("/read-config")
-    public String readConfig() throws Exception {
-        CommonResult testData = testService.testLoadConfig("TEST");
-        return testData.getMsg();
+    public CommonResult readConfig() throws Exception {
+        return success(testService.testLoadConfig("TEST"));
     }
-
-
-
-
 
     /**
      * 测试一个加密的处理.
@@ -143,11 +160,11 @@ public class TestController {
      * 一般情况下，不使用，这里时单纯为了测试解密的处理，才提供加密的接口。
      * 加密出来结果了， 然后去测试解密的接口.
      *
-     * @param originalText
-     * @return
+     * @param originalText 原始文本
+     * @return 统一响应体，data 为加密后文本
      */
     @PostMapping("/encrypt")
-    public String encrypt(@RequestBody String originalText) throws Exception {
+    public CommonResult encrypt(@RequestBody String originalText) throws Exception {
         // 读取密钥
         PublicKey publicKey = ECCKeyReader.readPublicKeyFromString(configData.getPublicKeyPem());
 
@@ -156,10 +173,8 @@ public class TestController {
         String encryptedText = ECCCrypto.encrypt(originalText, publicKey);
         log.debug("加密后: {}", encryptedText);
 
-        return encryptedText;
+        return success(encryptedText);
     }
-
-
 
     /**
      * 测试一个解密的处理.
@@ -168,11 +183,11 @@ public class TestController {
      * 客户端，使用公钥， 加密一个数据， 然后， Base64编码， 将整个 字符串， POST 到服务器接口上.
      * 服务端，接收到客户端提交过来的数据后， 使用 私钥，解密数据。
      *
-     * @param encryptedData
-     * @return
+     * @param encryptedData 加密数据
+     * @return 统一响应体，data 为解密后文本
      */
     @PostMapping("/decrypt")
-    public String decrypt(@RequestBody String encryptedData) throws Exception {
+    public CommonResult decrypt(@RequestBody String encryptedData) throws Exception {
         // encryptedData 就是加密后的数据（可能是Base64编码的字符串）
         // 读取密钥
         PrivateKey privateKey = ECCKeyReader.readPrivateKeyFromString(configData.getPrivateKeyPem());
@@ -183,65 +198,51 @@ public class TestController {
         String decryptedText = ECCCrypto.decrypt(encryptedData, privateKey);
         log.debug("解密后: {}", decryptedText);
 
-        return decryptedText;
+        return success(decryptedText);
     }
-
 
     /**
      * 测试一个 先解密， 后调用存储过程的处理.
-     * @param encryptedData
-     * @return
+     * @param encryptedData 加密数据
+     * @return 统一响应体
      */
     @PostMapping("/save-log")
-    public String saveLogData(@RequestBody String encryptedData) throws Exception {
-
+    public CommonResult saveLogData(@RequestBody String encryptedData) throws Exception {
         log.debug("/save-log start!");
-
         testService.saveLogData(encryptedData);
-
-        return "success";
+        return success();
     }
-
 
     /**
      * 测试被定时调用的接口
-     * @return
+     * @return 统一响应体，data 为任务执行结果
      */
     @GetMapping("/daily-task")
-    public String dailyTask() {
-
+    public CommonResult dailyTask() {
         // 调用服务，完成 需要定时执行的任务.
-        return testService.dailyTask();
+        return success(testService.dailyTask());
     }
-
 
     /**
      * 测试默认的配置.
      * 也就是：配置的类里面，定义了属性的初始数值， 但是在配置文件中， 没有定义属性的值。
      * 系统在默认情况下，能正常运行，要具体做调整的时候，再修改配置文件， 针对特定的属性，进行修改配置.
-     * @return
+     * @return 统一响应体，data 为配置信息字符串
      */
     @GetMapping("/config")
-    public String testConfig() {
-
+    public CommonResult testConfig() {
         log.debug("/config start!");
-
-        return testService.testConfig();
+        return success(testService.testConfig());
     }
-
-
-
 
     /**
      * 测试的，相同接口，不同实现的处理.
      * 如果更换其它实现的情况下，需要修改 application.yml 配置文件.
      * 配置在 application.yml 文件中的 spring-->profiles-->active 下面.
      *
-     *
      * 测试的机制，
      * 先启动项目，然后访问 http://localhost:8080/test/info
      * 得到的是 客户A 的实现。
-     *
      *
      * 停止项目，application.yml 文件中的 spring-->profiles-->active 修改为 clientB
      * 再运行项目， 刷新 http://localhost:8080/test/info
@@ -249,38 +250,28 @@ public class TestController {
      *
      * 也就是一套代码， 发布给不同的客户使用，  不同的客户， 又有其自己特有的 业务逻辑， 通过不同的实现，以及配置文件， 来完成， 发布到不同的客户那里，实现特定客户的功能。
      *
-     * @return
+     * @return 统一响应体，data 为客户信息
      */
     @GetMapping("/info")
-    public String getClientInfo() {
-
+    public CommonResult getClientInfo() {
         log.debug("/info start!");
-
-        return clientService.getClientInfo();
+        return success(clientService.getClientInfo());
     }
-
-
-
 
     @GetMapping("/other-info")
-    public String getOtherClientInfo() {
-
+    public CommonResult getOtherClientInfo() {
         log.debug("/other-info start!");
-
-        return otherClientService.getClientInfo();
+        return success(otherClientService.getClientInfo());
     }
-
 
     /**
      * 假设我这套系统， 一开始， 是为 甲行业做的。
      * 定义了  甲行业的接口： ClientService
      * 为 甲行业的两家公司， 分别写了实现： ClientAServiceImpl， ClientBServiceImpl
      *
-     *
      * 现在，业务拓展了， 准备为  相似的 乙行业写。
      * 定义了  乙行业的接口： OtherClientService
      * 为 乙行业的两家公司， 分别写了实现： OtherClientCServiceImpl， OtherClientDServiceImpl
-     *
      *
      * 处理的时候， 可能是需要使用 甲行业的 部分代码， 又要使用 乙行业的部分代码.
      *
@@ -288,15 +279,13 @@ public class TestController {
      * 先启动项目，然后访问 http://localhost:8080/test/both
      * 得到的是 甲行业 客户A 的实现 + 乙行业 客户C 的实现。
      *
-     *
      * 停止项目，application.yml 文件中的 spring-->profiles-->active 修改为 clientB,otherClientEmpty
      * 得到的是 甲行业 客户B 的实现 +  乙行业 的空白实现。
      *
-     * @return
+     * @return 统一响应体，data 为两个行业客户实现的合并列表（逗号分隔字符串）
      */
     @GetMapping("/both")
-    public String getBoth() {
-
+    public CommonResult getBoth() {
         log.debug("/both start!");
 
         List<String> resultList = clientService.getTodoList();
@@ -306,14 +295,6 @@ public class TestController {
         todoList.addAll(resultList);
         todoList.addAll(otherResultList);
 
-        return String.join(",", todoList);
+        return success(String.join(",", todoList));
     }
-
-
-
-
-
-
-
-
 }

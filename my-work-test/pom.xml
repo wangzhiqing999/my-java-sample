@@ -23,6 +23,8 @@
         <maven.compiler.target>21</maven.compiler.target>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- 覆盖 Spring Boot BOM 中的 Lombok 版本：1.18.8 与 JDK 21 不兼容（IllegalAccessError），需 1.18.30+ -->
+        <lombok.version>1.18.34</lombok.version>
     </properties>
 
 

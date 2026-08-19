@@ -54,8 +54,25 @@ public class ConfigData {
 
 
 
-    // 下面这3个， 是类里面定义了默认值， 但是， 配置文件中， 也配置了新的数值。
+
+    /**
+     * 这个是模拟一个 配置.
+     * 默认值的配置.
+     * 但是， 配置文件中， 也配置了新的数值。
+     */
     private boolean testBooleanDefaultValue2 = true;
+
+    /**
+     * 这个是模拟一个 配置.
+     * 默认值的配置.
+     * 但是， 配置文件中， 也配置了新的数值。
+     */
     private int testIntDefaultValue2 = 1024;
+
+    /**
+     * 这个是模拟一个 配置.
+     * 默认值的配置.
+     * 但是， 配置文件中， 也配置了新的数值。
+     */
     private String testStringDefaultValue2 = "Default String value";
 }

@@ -10,7 +10,10 @@ import java.security.NoSuchAlgorithmException;
  * HMAC-SHA256 哈希工具类
  * 计算字符串的 HMAC-SHA256 哈希值（64位十六进制字符串）
  */
-public class HmacSha256Util {
+public final class HmacSha256Util {
+
+    private HmacSha256Util() {
+    }
 
     /**
      * 计算字符串的 HMAC-SHA256 哈希值（64位十六进制字符串）

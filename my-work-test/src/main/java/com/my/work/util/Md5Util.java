@@ -3,8 +3,10 @@ package com.my.work.util;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class Md5Util {
+public final class Md5Util {
 
+    private Md5Util() {
+    }
 
     /**
      * 计算字符串的 MD5 哈希值（32位十六进制字符串）

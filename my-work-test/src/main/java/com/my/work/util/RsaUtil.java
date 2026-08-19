@@ -16,7 +16,10 @@ import java.util.Base64;
  * 加密：公钥
  * 解密：私钥
  */
-public class RsaUtil {
+public final class RsaUtil {
+
+    private RsaUtil() {
+    }
 
     // 加密算法
     private static final String RSA_ALGORITHM = "RSA";

@@ -22,7 +22,10 @@ import java.util.Map;
 /**
  * json 工具类 (基于 Jackson 3.x)
  */
-public class JsonUtil {
+public final class JsonUtil {
+
+    private JsonUtil() {
+    }
 
     public static final DateTimeFormatter DEFAULT_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());

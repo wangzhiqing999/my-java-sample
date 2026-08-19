@@ -14,7 +14,10 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 
-public class PemUtils {
+public final class PemUtils {
+
+    private PemUtils() {
+    }
 
     private static byte[] parsePEMFile(File pemFile) throws IOException {
         if (!pemFile.isFile() || !pemFile.exists()) {

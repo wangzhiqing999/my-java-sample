@@ -422,9 +422,9 @@ public CommonResult testLoadConfig(String code) { ... }
 ### 安全-P0
 
 - [x] **SEC-P0-1**：代码中无硬编码的密钥、密码、Token
-  - 检查范围：所有 `.java` 文件中的字符串常量
-  - 特别关注：~~`AesEcbUtils.DEFAULT_AES_KEY`~~、~~`AesUtil.IV`~~（均已修复，无硬编码密钥/IV）
-  - 当前状态：**✅ 已修复（2026-08-19）** → 删除 `AesEcbUtils.java`（硬编码密钥 + ECB），新增 `AesGcmUtils.java`（密钥由调用方传入，不再提供默认密钥）
+  - 检查范围：所有 `.java` 文件中的字符串常量（含工具类、配置类、JWT/签名类等）
+  - 特别关注：~~`AesEcbUtils.DEFAULT_AES_KEY`~~、~~`AesUtil.IV`~~、~~`AppleClientSecret.PRIVATE_KEY_256`~~（均已修复）
+  - 当前状态：**✅ 已修复（2026-08-19）** → 删除 `AesEcbUtils.java`（硬编码密钥 + ECB），新增 `AesGcmUtils.java`（密钥由调用方传入，不再提供默认密钥）；删除 `AppleClientSecret.java`（硬编码 EC P-256 私钥 + clientId/teamId/keyId 占位符 + 零调用点，与 `DesEncryptor` 同款处理，git 历史可查）
 
 - [x] **SEC-P0-2**：不使用已知不安全的加密模式（AES-ECB）
   - ECB 模式相同明文产生相同密文，泄露数据模式
@@ -476,7 +476,7 @@ public CommonResult testLoadConfig(String code) { ... }
 
 - [x] **Q-P1-2**：禁止使用 `System.out.println`
   - 统一使用 SLF4J 日志框架
-  - ✅ 已修复（2026-08-19）：`Application.main()` → `log.info("start at {}")`；`PemUtils` 4 处 catch 块 println → 抛 `IllegalArgumentException`（顺带消除静默返回 null）；6 个工具类（`DesEncryptor`/`AppleClientSecret`/`Sha256Util`/`Md5Util`/`HmacSha256Util`/`RsaUtil`）main 自测代码整段删除（含 `AppleClientSecret` 的 `e.printStackTrace()`），全项目 0 残留
+  - ✅ 已修复（2026-08-19）：`Application.main()` → `log.info("start at {}")`；`PemUtils` 4 处 catch 块 println → 抛 `IllegalArgumentException`（顺带消除静默返回 null）；6 个工具类（`DesEncryptor`/`AppleClientSecret`/`Sha256Util`/`Md5Util`/`HmacSha256Util`/`RsaUtil`）main 自测代码整段删除（含 `AppleClientSecret` 的 `e.printStackTrace()`），全项目 0 残留。后续（2026-08-19）`AppleClientSecret` 整类删除（SEC-P0-1 漏检项，硬编码 EC 私钥），详见 P0 汇总表第 6 项
 
 - [x] **Q-P1-3**：日志使用占位符 `{}`
   - 避免不必要的字符串拼接开销
@@ -517,12 +517,12 @@ public CommonResult testLoadConfig(String code) { ... }
   - 加解密逻辑应放在 Service 层
   - 当前状态：**存在违规** → `TestController.encrypt/decrypt` 包含加解密逻辑
 
-- [ ] **M-P1-2**：统一 API 响应格式
+- [x] **M-P1-2**：统一 API 响应格式
   - 所有接口返回 `CommonResult` 包装
-  - 当前状态：**存在违规** → 部分接口返回 `String`，部分返回 `Map`
+  - ✅ 已修复（2026-08-19）：`TestController` 13 个接口全部返回 `CommonResult`（`get`/`getVersion`/`health`/`saveConfig`/`readConfig`/`encrypt`/`decrypt`/`saveLogData`/`dailyTask`/`testConfig`/`getClientInfo`/`getOtherClientInfo`/`getBoth`），Controller 层提供 3 个 `success(...)` 辅助方法构造成功响应，对象/Map 通过 `JsonUtil.toJson` 序列化后放入 `data` 字段；`GlobalExceptionHandler` 同步统一返回 `ResponseEntity<CommonResult>`（400/500），与正常响应格式一致；Service 层签名保持不变。grep 确认 13 个接口均为 `public CommonResult`。javac 编译验证 28 源文件全部通过（JDK 21 + Lombok 1.18.34）
 
-- [ ] **M-P1-3**：工具类声明为 `final` 并提供私有构造函数
-  - 当前状态：**存在违规** → 所有工具类均未声明 `final` 和私有构造
+- [x] **M-P1-3**：工具类声明为 `final` 并提供私有构造函数
+  - ✅ 已修复（2026-08-19）：8 个工具类全部声明 `public final class` + 私有构造（含此前已修的 `AesGcmUtils`/`AesUtil`，本次补齐 `Md5Util`/`Sha256Util`/`HmacSha256Util`/`RsaUtil`/`PemUtils`/`JsonUtil` 6 个）；grep 确认 `com.my.work.util` 包下 8 个工具类全部 final + 私有构造
 
 - [ ] **M-P1-4**：配置项添加完整 Javadoc
   - 当前状态：**存在违规** → `ConfigData` 部分属性无注释
@@ -641,11 +641,12 @@ PR 提交
 | 3 | ~~`TestController.java`~~ | 异常信息返回客户端 | 新增 `GlobalExceptionHandler`（`@RestControllerAdvice`）统一兜底，移除 `return e.getMessage()` | ✅ 已修复（2026-08-19） |
 | 4 | ~~`TestServiceImpl.java`~~ | `testLoadConfig` 异常返回 null | 移除 catch，异常上抛；接口与 Controller 同步声明 `throws Exception` | ✅ 已修复（2026-08-19） |
 | 5 | ~~`TestServiceImpl.java`~~ | `health()` 暴露堆栈 | 移除 `stackTrace` 与 `e.getMessage()`，堆栈改 `log.error`，仅返回 `status=DOWN` + 通用提示 | ✅ 已修复（2026-08-19） |
+| 6 | ~~`AppleClientSecret.java`~~ | 硬编码 EC P-256 私钥常量 `PRIVATE_KEY_256`（漏检项，类无调用点，`createClientSecret` 已通过参数接收私钥） | 整类删除（与 `DesEncryptor` 同款处理），pom 中 `java-jwt` 4.4.0 同时成为无用依赖（可后续清理） | ✅ 已修复（2026-08-19） |
 
 ### P1（尽快修复）
 
-| 编号 | 文件 | 问题 | 修正建议 |
-|------|------|------|---------|
+| 编号 | 文件 | 问题 | 修正建议 | 状态 |
+|------|------|------|---------|------|
 | 6 | ~~多个文件~~ | 字段注入 → 构造器注入 | 使用 `@RequiredArgsConstructor` | ✅ 已修复（2026-08-19，3 文件 7 处） |
 | 7 | ~~多个文件~~ | `System.out.println` | 改用 SLF4J / 删除 main 自测代码 | ✅ 已修复（2026-08-19，P0-4 清 `TestController` 3 处 + Q-P1-2 清 `Application`/`PemUtils`/6 个工具类 main 共 19 处，全项目 0 残留） |
 | 8 | ~~多个文件~~ | 日志字符串拼接 | 改用 `{}` 占位符 | ✅ 已修复（2026-08-19，2 文件 2 处） |
@@ -655,13 +656,16 @@ PR 提交
 | 12 | ~~`DesEncryptor.java`~~ | 使用 DES | 改用 AES | ✅ 已修复（2026-08-19，整类删除：无调用点，弱算法+硬编码密钥，pgcrypto 兼容用 SQL 侧实现） |
 | 13 | ~~全项目~~ | 无测试代码 | 补充核心模块单元测试 | ✅ 已修复（2026-08-19，pom 加 `spring-boot-starter-test`，新增 7 个工具类 JUnit 测试共 19 用例） |
 | 14 | ~~全项目~~ | 无全局异常处理 | 新增 `@RestControllerAdvice` | ✅ 已修复（2026-08-19，`GlobalExceptionHandler`） |
+| 15 | ~~工具类~~ | 工具类未声明 `final` + 私有构造 | 补齐 8 个工具类 `public final class` + 私有构造 | ✅ 已修复（2026-08-19，6 个工具类本次补齐 + 2 个已修） |
+| 16 | ~~`TestController.java`/`GlobalExceptionHandler.java`~~ | API 响应格式不统一（String/Map/VersionResponse 混用） | 13 个接口统一返回 `CommonResult`，异常处理器同步返回 `ResponseEntity<CommonResult>` | ✅ 已修复（2026-08-19，javac 编译 28 源文件通过） |
+| 17 | ~~`pom.xml`~~ | Lombok 1.18.8 与 JDK 21 不兼容（`IllegalAccessError`，BOM 默认版本） | pom `properties` 新增 `<lombok.version>1.18.34</lombok.version>` 覆盖 Spring Boot BOM | ✅ 已修复（2026-08-19，`mvn -DskipTests compile` BUILD SUCCESS，`dependency:list` 确认 Lombok 1.18.34 生效） |
 
 ### P2（后续优化）
 
-| 编号 | 文件 | 问题 | 修正建议 |
-|------|------|------|---------|
+| 编号 | 文件 | 问题 | 修正建议 | 状态 |
+|------|------|------|---------|------|
 | 15 | ~~`RsaUtil.java` 等~~ | main 方法测试代码 | 迁移到单元测试 | ✅ 已修复（2026-08-19，6 个工具类 main 随 Q-P1-2 删除；7 个 JUnit 测试类随 Q-P2-1 补齐） |
 | 16 | ~~`TestController.java`~~ | 内部类 `VersionResponse` | 提取为独立文件 | ✅ 已修复（2026-08-19，Q-P2-4，提取至 `com.my.work.model.VersionResponse`） |
 | 17 | ~~`JsonUtil.java`~~ | 注释掉的 import | 删除 | ✅ 已修复（2026-08-19，Q-P2-3，删除废弃 `JavaTimeModule` 注释 import，全项目零残留） |
-| 18 | 工具类 | 未声明 `final` + 私有构造 | 补充 |
-| 19 | `ConfigData.java` | 部分配置项无注释 | 补充 Javadoc |
+| 18 | ~~工具类~~ | 未声明 `final` + 私有构造 | 补充 | ✅ 已修复（2026-08-19，M-P1-3，8 个工具类全部 final + 私有构造） |
+| 19 | ~~`ConfigData.java`~~ | 部分配置项无注释 | 补充 Javadoc | ✅ 已修复（2026-08-19） |

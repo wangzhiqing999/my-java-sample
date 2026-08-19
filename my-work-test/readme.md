@@ -381,13 +381,15 @@ openssl ec -in priv_key_s.pem -pubout -out pub_key_s.pem
 
 启动服务后，可通过以下接口进行测试。
 
+> **响应格式**：自 M-P1-2 修复起，所有接口统一返回 `CommonResult`（`{code, msg, data}`）。成功响应 `code=200`、`msg="success"`，业务数据放入 `data` 字段（对象/Map 序列化为 JSON 字符串，字符串直接放入）；异常由 `GlobalExceptionHandler` 兜底，返回 `code=400`（参数错误）或 `500`（服务器错误），`msg` 为通用提示。
+
 ### 基础测试
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/test/get` | 基础测试，调用存储过程并返回 `success` |
-| GET | `/test/health` | 健康检查，返回数据库连通状态 |
-| GET | `/test/version` | 获取项目版本信息（从 MANIFEST.MF 读取） |
+| GET | `/test/get` | 基础测试，调用存储过程，data=null |
+| GET | `/test/health` | 健康检查，data 为 `{status, message}` 的 JSON 字符串 |
+| GET | `/test/version` | 获取项目版本信息，data 为 `{version, projectName}` 的 JSON 字符串 |
 
 ```bash
 # 基础测试
@@ -640,7 +642,6 @@ src/main/java/com/my/work/
     ├── Sha256Util.java              # SHA-256 工具
     ├── HmacSha256Util.java          # HMAC-SHA256 工具
     ├── PemUtils.java                # PEM 文件工具
-    ├── AppleClientSecret.java       # Apple Client Secret 生成
 src/main/resources/
 ├── application.yml                 # 主配置文件
 └── logback-spring.xml              # 日志配置
