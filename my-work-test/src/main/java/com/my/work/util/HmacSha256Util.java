@@ -56,15 +56,4 @@ public class HmacSha256Util {
             throw new RuntimeException("Invalid HMAC key", e);
         }
     }
-
-    // 测试方法
-    public static void main(String[] args) {
-        String data = "hello world";
-        String secretKey = "123456";
-        String hmacSha256 = calculateHmacSHA256(data, secretKey);
-
-        System.out.println("待加密数据：" + data);
-        System.out.println("密钥：" + secretKey);
-        System.out.println("HMAC-SHA256 结果：" + hmacSha256);
-    }
 }

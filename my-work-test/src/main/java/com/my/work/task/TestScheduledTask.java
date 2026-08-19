@@ -2,8 +2,8 @@ package com.my.work.task;
 
 
 import com.my.work.service.TestService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -12,10 +12,10 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class TestScheduledTask {
 
-    @Autowired
-    private TestService testService;
+    private final TestService testService;
 
 
     /**
@@ -30,7 +30,7 @@ public class TestScheduledTask {
     @Scheduled(cron = "0 * * * * ?")
     public void callDailyTask() {
         String result = testService.dailyTask();
-        log.info("定时任务调用结果：" + result);
+        log.info("定时任务调用结果: {}", result);
     }
 
 }

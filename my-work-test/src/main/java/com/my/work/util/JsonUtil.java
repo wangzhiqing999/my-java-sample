@@ -1,6 +1,5 @@
 package com.my.work.util;
 
-
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ext.javatime.deser.LocalDateDeserializer;
 import tools.jackson.databind.ext.javatime.deser.LocalDateTimeDeserializer;
@@ -12,15 +11,13 @@ import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.SerializationFeature;
 import tools.jackson.databind.module.SimpleModule;
 
-// import tools.jackson.datatype.jsr310.JavaTimeModule; // 注意：此导入在3.0中已废弃，仅作对比
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * json 工具类 (基于 Jackson 3.x)

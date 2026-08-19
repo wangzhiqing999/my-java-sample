@@ -8,12 +8,10 @@ import com.my.work.sec.ECCCrypto;
 import com.my.work.sec.ECCKeyReader;
 import com.my.work.service.TestService;
 import com.my.work.util.JsonUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.security.PrivateKey;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,14 +24,13 @@ import static com.my.work.util.JsonUtil.OBJECT_MAPPER;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class TestServiceImpl implements TestService {
 
-    @Autowired
-    private TestMapper testMapper;
+    private final TestMapper testMapper;
 
 
-    @Autowired
-    private ConfigData configData;
+    private final ConfigData configData;
 
 
     @Override
@@ -98,8 +95,8 @@ public class TestServiceImpl implements TestService {
 
 
         int[] testDatas = {1, 2, 3, 4};
-        int result = testMapper.test_sum_array(testDatas);
-        log.info("test_sum_array( 1,2,3,4 ) = {}", result);
+        int result = testMapper.testSumArray(testDatas);
+        log.info("testSumArray( 1,2,3,4 ) = {}", result);
 
 
     }
@@ -113,12 +110,9 @@ public class TestServiceImpl implements TestService {
             result.put("status", "UP");
             result.put("message", "health");
         } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            e.printStackTrace(new PrintWriter(sw));
-
+            log.error("健康检查失败，数据库连接异常", e);
             result.put("status", "DOWN");
-            result.put("error", e.getMessage());
-            result.put("stackTrace", sw.toString()); // 完整堆栈
+            result.put("message", "服务不可用，请稍后重试");
         }
         return result;
     }
@@ -129,6 +123,7 @@ public class TestServiceImpl implements TestService {
      *
      * @param requestData
      */
+    @Override
     public void saveLogData(String requestData) throws Exception {
 
         // 请求的字符串，是 json 字符串，加密后的.
@@ -138,7 +133,7 @@ public class TestServiceImpl implements TestService {
 
         // 解密
         String decryptedText = ECCCrypto.decrypt(requestData, privateKey);
-        log.debug("解密后: " + decryptedText);
+        log.debug("解密后: {}", decryptedText);
 
         // 解密后的 json 字符串，作为参数，调用存储过程.
         Map<String, Object> jsonResult = testMapper.testHavepjHaverj(decryptedText);
@@ -152,6 +147,7 @@ public class TestServiceImpl implements TestService {
      * 测试的， 每天定时执行的任务.
      * @return
      */
+    @Override
     public String dailyTask() {
         log.info("执行每日任务逻辑...");
         return "任务执行成功";
@@ -163,6 +159,7 @@ public class TestServiceImpl implements TestService {
      * 测试业务逻辑，在配置文件中定义的情况.
      * @return
      */
+    @Override
     public String testConfig() {
 
         StringBuilder sb = new StringBuilder();
@@ -188,6 +185,7 @@ public class TestServiceImpl implements TestService {
 
 
 
+    @Override
     public void testSaveConfig(String code, CommonResult data) {
         try {
             String json = JsonUtil.toJson(data);
@@ -202,20 +200,15 @@ public class TestServiceImpl implements TestService {
 
     /**
      * 测试获取配置信息.
-     * @param code
-     * @return
+     *
+     * @param code 配置编码
+     * @return 配置信息
+     * @throws Exception 配置获取或解析失败时上抛，由全局异常处理器统一处理
      */
-    public CommonResult testLoadConfig(String code) {
-
-        try {
-            String resultText = testMapper.fn_get_config(code);
-            CommonResult result = OBJECT_MAPPER.readValue(resultText, CommonResult.class);
-            return result;
-        } catch (Exception ex){
-            log.error("保存配置信息发生错误...", ex);
-            return null;
-        }
-
+    @Override
+    public CommonResult testLoadConfig(String code) throws Exception {
+        String resultText = testMapper.fn_get_config(code);
+        return OBJECT_MAPPER.readValue(resultText, CommonResult.class);
     }
 
 

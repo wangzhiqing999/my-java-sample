@@ -89,7 +89,12 @@
             <scope>runtime</scope>
         </dependency>
 
-
+        <!-- 测试依赖（JUnit 5 + AssertJ + Mockito 等，版本由 spring-boot-starter-parent 管理） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 

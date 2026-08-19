@@ -68,21 +68,4 @@ public class AppleClientSecret {
                 .withExpiresAt(new Date(System.currentTimeMillis() + 86400 * 180 * 1000L))
                 .sign(algorithm);
     }
-
-
-    public static void main(String[] args) {
-
-        System.out.println("client_id:" + client_id);
-        System.out.println("  team_id:" + team_id);
-        System.out.println("   key_id:" + key_id);
-
-        try {
-            String clientSecret = createClientSecret(PRIVATE_KEY_256);
-            System.out.println("clientSecret 建议保存，有效期可设置最长 180 天");
-            System.out.println(clientSecret);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

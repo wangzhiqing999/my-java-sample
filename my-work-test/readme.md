@@ -404,15 +404,15 @@ curl http://localhost:8080/test/version
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/test/saveconfig?code=1&msg=test_message` | 保存配置到数据库 |
-| GET | `/test/readconfig` | 从数据库读取配置 |
+| POST | `/test/save-config?code=1&msg=test_message` | 保存配置到数据库（POST，参数经 query string 传入） |
+| GET | `/test/read-config` | 从数据库读取配置 |
 
 ```bash
-# 保存配置
-curl "http://localhost:8080/test/saveconfig?code=1&msg=hello"
+# 保存配置（POST，query 参数）
+curl -X POST "http://localhost:8080/test/save-config?code=1&msg=hello"
 
 # 读取配置
-curl http://localhost:8080/test/readconfig
+curl http://localhost:8080/test/read-config
 ```
 
 ### ECC 加解密
@@ -421,7 +421,7 @@ curl http://localhost:8080/test/readconfig
 |------|------|------|
 | POST | `/test/encrypt` | 使用公钥加密数据 |
 | POST | `/test/decrypt` | 使用私钥解密数据 |
-| POST | `/test/savelog` | 解密数据后调用存储过程保存日志 |
+| POST | `/test/save-log` | 解密数据后调用存储过程保存日志 |
 
 ```bash
 # 加密
@@ -440,7 +440,7 @@ curl -X POST http://localhost:8080/test/decrypt \
 # 返回原始明文：{"log_text":"这是使用公钥加密的数据"}
 
 # 解密并保存日志（先解密，再将明文 JSON 传给存储过程）
-curl -X POST http://localhost:8080/test/savelog \
+curl -X POST http://localhost:8080/test/save-log \
   -H "Content-Type: text/plain" \
   -d 'AFgwVjAQBgcqhkjOPQIBBgUrgQQACgNCAAT6sembKQ/RLhvi4xZX4m5g...'
 
@@ -452,7 +452,7 @@ curl -X POST http://localhost:8080/test/savelog \
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/test/info` | 获取 ClientService 当前激活实现的客户信息 |
-| GET | `/test/otherinfo` | 获取 OtherClientService 当前激活实现的客户信息 |
+| GET | `/test/other-info` | 获取 OtherClientService 当前激活实现的客户信息 |
 | GET | `/test/both` | 获取两个接口当前激活实现合并后的待办列表 |
 
 ### 定时任务测试
@@ -547,7 +547,7 @@ openssl ec -in priv_key_s.pem -pubout -out pub_key_s.pem
   │── 1. 使用公钥加密数据 ──────────> │  POST /test/encrypt（测试用）
   │<── 返回 Base64 密文 ──────────── │
   │                                   │
-  │── 2. 提交密文 ──────────────────> │  POST /test/savelog
+  │── 2. 提交密文 ──────────────────> │  POST /test/save-log
   │   （服务端用私钥解密后存库）       │
   │<── 返回 success ───────────────── │
 ```
@@ -619,7 +619,8 @@ src/main/java/com/my/work/
 ├── mapper/
 │   └── TestMapper.java             # MyBatis Mapper（数据库操作）
 ├── model/
-│   └── CommonResult.java           # 通用返回结果（code/msg/data）
+│   ├── CommonResult.java           # 通用返回结果（code/msg/data）
+│   └── VersionResponse.java        # 版本信息响应体（version/projectName）
 ├── sec/
 │   ├── ECCCrypto.java              # ECC 加解密（ECDH + AES/GCM）
 │   └── ECCKeyReader.java           # PEM 密钥读取
@@ -632,19 +633,18 @@ src/main/java/com/my/work/
 │   └── TestScheduledTask.java      # 定时任务（@Scheduled）
 └── util/
     ├── JsonUtil.java                # JSON 工具（Jackson 3.x）
-    ├── AesEcbUtils.java             # AES-ECB 加解密
-    ├── AesUtil.java                 # AES 工具
+    ├── AesGcmUtils.java             # AES-GCM 加解密（认证加密，替代不安全的 ECB）
+    ├── AesUtil.java                 # AES-CBC 工具（随机 IV，Base64(IV+密文)）
     ├── RsaUtil.java                 # RSA 加解密
-    ├── DesEncryptor.java            # DES 加密
     ├── Md5Util.java                 # MD5 工具
     ├── Sha256Util.java              # SHA-256 工具
     ├── HmacSha256Util.java          # HMAC-SHA256 工具
     ├── PemUtils.java                # PEM 文件工具
     ├── AppleClientSecret.java       # Apple Client Secret 生成
-    └── JsonUtil.java                # JSON 工具
 src/main/resources/
 ├── application.yml                 # 主配置文件
 └── logback-spring.xml              # 日志配置
+src/test/java/com/my/work/util/     # 单元测试（JUnit 5，7 个工具类测试类，19 用例）
 ```
 
 ---

@@ -55,9 +55,11 @@ public interface TestService {
 
     /**
      * 测试获取配置信息.
-     * @param code
-     * @return
+     *
+     * @param code 配置编码
+     * @return 配置信息
+     * @throws Exception 配置获取或解析失败时上抛
      */
-    CommonResult testLoadConfig(String code);
+    CommonResult testLoadConfig(String code) throws Exception;
 
 }

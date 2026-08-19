@@ -65,12 +65,12 @@ public interface TestMapper {
 
 
     /**
-     * 调用 test_sum_array 函数， 参数是一个数组.
+     * 调用数据库函数 test_sum_array（数组求和）， 参数是一个数组.
      * @param datas
      * @return
      */
     @Select("SELECT test_sum_array(#{datas})")
-    int test_sum_array(int[] datas);
+    int testSumArray(int[] datas);
 
 
 

@@ -47,12 +47,4 @@ public class Sha256Util {
             throw new RuntimeException("UTF-8 encoding not supported", e);
         }
     }
-
-    // 测试方法
-    public static void main(String[] args) {
-        String testStr = "123456";
-        String sha256 = calculateSHA256(testStr);
-        System.out.println("原文：" + testStr);
-        System.out.println("SHA256哈希值：" + sha256);
-    }
 }

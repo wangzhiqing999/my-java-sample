@@ -71,30 +71,4 @@ public class RsaUtil {
         KeyFactory keyFactory = KeyFactory.getInstance(RSA_ALGORITHM);
         return keyFactory.generatePrivate(spec);
     }
-
-    // 测试主方法
-    public static void main(String[] args) throws Exception {
-
-        // 这里是单纯的测试。
-        // 实际使用的时候，使用下面的命令，来生成 私钥、公钥.
-        // openssl genrsa -out rsa_priv_key.pem 2048
-        // openssl rsa -in rsa_priv_key.pem -pubout -out rsa_pub_key.pem
-
-        // 生成私钥公钥文件之后， 使用下面的命令，移除换行.
-        // sed '/^-/d' rsa_pub_key.pem | tr -d '\n'
-        // sed '/^-/d' rsa_priv_key.pem | tr -d '\n'
-
-        // 然后，复制最终的结果，到下面来进行测试。
-        String publicKey = "这里是公钥的内容，只有一行内容。";
-        String privateKey = "这里是私钥的内容，只有一行内容。";
-
-
-        String content = "hello rsa 加密测试";
-        // 加密
-        String cipherText = encrypt(content, publicKey);
-        System.out.println("加密结果：" + cipherText);
-        // 解密
-        String plainText = decrypt(cipherText, privateKey);
-        System.out.println("解密结果：" + plainText);
-    }
 }

@@ -15,6 +15,7 @@ public class ClientBServiceImpl  implements ClientService {
      * 获取客户信息.
      * @return
      */
+    @Override
     public String getClientInfo() {
         return "客户B - (我是客户B的业务逻辑)";
     }

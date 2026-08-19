@@ -2,14 +2,14 @@ package com.my.work.controller;
 
 import com.my.work.config.ConfigData;
 import com.my.work.model.CommonResult;
+import com.my.work.model.VersionResponse;
 import com.my.work.sec.ECCCrypto;
 import com.my.work.sec.ECCKeyReader;
 import com.my.work.service.ClientService;
 import com.my.work.service.OtherClientService;
 import com.my.work.service.TestService;
-import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -28,28 +28,25 @@ import java.util.jar.Manifest;
 @RestController
 @RequestMapping("/test")
 @Slf4j
+@RequiredArgsConstructor
 public class TestController {
 
-    @Autowired
-    private TestService testService;
+    private final TestService testService;
 
 
-    @Autowired
-    private ConfigData configData;
-
-
-    /**
-     * 注意：这个服务，是有多个实现的，具体使用哪一个实现，配置在 application.yml 文件中的 spring-->profiles-->active 下面.
-     */
-    @Autowired
-    private ClientService clientService;
+    private final ConfigData configData;
 
 
     /**
      * 注意：这个服务，是有多个实现的，具体使用哪一个实现，配置在 application.yml 文件中的 spring-->profiles-->active 下面.
      */
-    @Autowired
-    private OtherClientService otherClientService;
+    private final ClientService clientService;
+
+
+    /**
+     * 注意：这个服务，是有多个实现的，具体使用哪一个实现，配置在 application.yml 文件中的 spring-->profiles-->active 下面.
+     */
+    private final OtherClientService otherClientService;
 
 
 
@@ -57,7 +54,7 @@ public class TestController {
      * 单纯的测试.
      * @return
      */
-    @RequestMapping("/get")
+    @GetMapping("/get")
     public String get() {
         testService.test();
         return "success";
@@ -97,24 +94,6 @@ public class TestController {
     }
 
     /**
-     * 响应体实体类
-     */
-    @Data
-    public static class VersionResponse {
-        private String version;
-        private String projectName;
-
-        // 构造函数
-        public VersionResponse(String version, String projectName) {
-            this.version = version;
-            this.projectName = projectName;
-        }
-    }
-
-
-
-
-    /**
      * 健康监测.
      * @return
      */
@@ -129,12 +108,12 @@ public class TestController {
 
     /**
      * 测试保存配置信息.
-     * http://localhost:8080/test/saveconfig?code=1&msg=test_message
+     * http://localhost:8080/test/save-config?code=1&msg=test_message
      * @param code
      * @param msg
      * @return
      */
-    @RequestMapping("/saveconfig")
+    @PostMapping("/save-config")
     public String saveConfig(int code, String msg) {
         CommonResult testData = new CommonResult();
         testData.setCode(code);
@@ -145,11 +124,11 @@ public class TestController {
 
     /**
      * 测试保存配置信息.
-     * http://localhost:8080/test/readconfig
+     * http://localhost:8080/test/read-config
      * @return
      */
-    @RequestMapping("/readconfig")
-    public String readConfig() {
+    @GetMapping("/read-config")
+    public String readConfig() throws Exception {
         CommonResult testData = testService.testLoadConfig("TEST");
         return testData.getMsg();
     }
@@ -168,27 +147,16 @@ public class TestController {
      * @return
      */
     @PostMapping("/encrypt")
-    public String encrypt(@RequestBody String originalText) {
+    public String encrypt(@RequestBody String originalText) throws Exception {
+        // 读取密钥
+        PublicKey publicKey = ECCKeyReader.readPublicKeyFromString(configData.getPublicKeyPem());
 
-        try {
-            // 读取密钥
-            PublicKey publicKey = ECCKeyReader.readPublicKeyFromString(configData.getPublicKeyPem());
+        log.debug("原始文本: {}", originalText);
 
+        String encryptedText = ECCCrypto.encrypt(originalText, publicKey);
+        log.debug("加密后: {}", encryptedText);
 
-            System.out.println("原始文本: " + originalText);
-
-            String encryptedText = ECCCrypto.encrypt(originalText, publicKey);
-            System.out.println("加密后: " + encryptedText);
-
-            return encryptedText;
-
-        } catch (Exception e) {
-            log.error("encrypt error!", e);
-
-            return e.getMessage();
-        }
-
-
+        return encryptedText;
     }
 
 
@@ -204,26 +172,18 @@ public class TestController {
      * @return
      */
     @PostMapping("/decrypt")
-    public String decrypt(@RequestBody String encryptedData) {
+    public String decrypt(@RequestBody String encryptedData) throws Exception {
+        // encryptedData 就是加密后的数据（可能是Base64编码的字符串）
+        // 读取密钥
+        PrivateKey privateKey = ECCKeyReader.readPrivateKeyFromString(configData.getPrivateKeyPem());
 
-        try {
-            // encryptedData 就是加密后的数据（可能是Base64编码的字符串）
-            // 读取密钥
-            PrivateKey privateKey = ECCKeyReader.readPrivateKeyFromString(configData.getPrivateKeyPem());
+        // 后续可以进行解密处理
 
-            // 后续可以进行解密处理
+        // 处理解密后的数据
+        String decryptedText = ECCCrypto.decrypt(encryptedData, privateKey);
+        log.debug("解密后: {}", decryptedText);
 
-            // 处理解密后的数据
-            String decryptedText = ECCCrypto.decrypt(encryptedData, privateKey);
-            System.out.println("解密后: " + decryptedText);
-
-            return decryptedText;
-
-        } catch (Exception e) {
-            log.error("decrypt error!", e);
-
-            return e.getMessage();
-        }
+        return decryptedText;
     }
 
 
@@ -232,22 +192,14 @@ public class TestController {
      * @param encryptedData
      * @return
      */
-    @PostMapping("/savelog")
-    public String saveLogData(@RequestBody String encryptedData) {
+    @PostMapping("/save-log")
+    public String saveLogData(@RequestBody String encryptedData) throws Exception {
 
-        log.debug("/savelog start!");
+        log.debug("/save-log start!");
 
-        try {
+        testService.saveLogData(encryptedData);
 
-            testService.saveLogData(encryptedData);
-
-            return  "success";
-
-        } catch (Exception e) {
-            log.error("save log error!", e);
-
-            return e.getMessage();
-        }
+        return "success";
     }
 
 
@@ -310,10 +262,10 @@ public class TestController {
 
 
 
-    @GetMapping("/otherinfo")
+    @GetMapping("/other-info")
     public String getOtherClientInfo() {
 
-        log.debug("/otherinfo start!");
+        log.debug("/other-info start!");
 
         return otherClientService.getClientInfo();
     }

@@ -45,11 +45,4 @@ public class Md5Util {
         }
     }
 
-    public static void main(String[] args) {
-        String testInput = "hello world";
-        String md5Result = calculateMD5(testInput);
-        System.out.println("MD5 of \"" + testInput + "\": " + md5Result);
-        // 输出：MD5 of "hello world": 5eb63bbbe01eeed093cb22bb8f5acdc3
-    }
-
 }
