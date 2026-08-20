@@ -81,7 +81,7 @@ com.my.work/
 | N-09 | DTO/VO 后缀语义化 | `UserSaveDTO`, `UserVO` | `UserData` |
 | N-10 | REST 端点路径使用小写短横线 | `/test/save-config` | `/test/saveConfig` |
 
-> **当前项目待修正项**：`TestMapper.test_sum_array()` 不符合 Java 命名规范，应改为 `testSumArray()`。
+> **当前项目待修正项**：已修复（Q-P1-5 ✅，2026-08-19）—— `TestMapper.test_sum_array()` 已改为 `testSumArray()`，`@Select` 中 PostgreSQL 函数名 `test_sum_array` 保留不动。
 
 ---
 
@@ -231,8 +231,7 @@ log.info("定时任务调用结果：" + result);  // 应改为 log.info("定时
 | ~~`AesEcbUtils.java`~~ | 使用 AES-ECB 模式（不安全） | ~~P0~~ ✅ 已删除 |
 | ~~`AesUtil.java`~~ | 硬编码静态 IV `byte[] IV = {1, 2, 3, ...}` | ~~P0~~ ✅ 已修复（随机 IV） |
 | ~~`DesEncryptor.java`~~ | 使用 DES 算法（已不安全） | ~~P1~~ ✅ 已删除 |
-| `Md5Util.java` | MD5 不应用于密码哈希 | P1 |
-| `RsaUtil.java` | main 方法中包含测试密钥占位符 | P2 |
+| ~~`Md5Util.java`~~ | MD5 不应用于密码哈希 | ~~P1~~ ✅ 已评估（仅通用摘要，未用于密码/签名，已加安全警示 Javadoc） |
 
 ### 6.2 接口安全
 
@@ -296,6 +295,8 @@ int test_sum_array(int[] datas);  // 命名不规范、缺少 @Param
 
 ### 当前项目待修正项
 
+> **状态（2026-08-20）**：`@RequestMapping` 混用已随 Q-P1-6 修复（`/get`、`/readconfig` → `@GetMapping`，`/saveconfig` → `@PostMapping`）；下方示例中"多个松散参数"一项已随 SEC-P1-3 修复（`TestController.saveConfig(int code, String msg)` 已封装为 `SaveConfigRequest` DTO + `@Valid`），其余为教学示例。
+
 ```java
 // ❌ 使用了通用的 @RequestMapping
 @RequestMapping("/get")
@@ -326,13 +327,7 @@ public String saveConfig(@Valid @RequestBody SaveConfigDTO dto) { ... }
 
 ### 当前项目待修正项
 
-```java
-// ConfigData.java - 配置项缺少详细注释
-// 下面这3个没有 Javadoc 说明
-private boolean testBooleanDefaultValue2 = true;
-private int testIntDefaultValue2 = 1024;
-private String testStringDefaultValue2 = "Default String value";
-```
+> **状态（2026-08-19）**：已随 M-P1-4 修复 —— 下述 3 个字段均已补齐 Javadoc，示例保留作教学参考。
 
 ---
 
@@ -350,14 +345,7 @@ private String testStringDefaultValue2 = "Default String value";
 
 ### 当前项目待修正项
 
-```java
-// TestServiceImpl.java - 以下方法缺少 @Override
-public void saveLogData(String requestData) throws Exception { ... }
-public String dailyTask() { ... }
-public String testConfig() { ... }
-public void testSaveConfig(String code, CommonResult data) { ... }
-public CommonResult testLoadConfig(String code) { ... }
-```
+> **状态（2026-08-20）**：已随 M-P1-5 修复 —— 全项目 65 个 public 方法/构造器均已具备完整 Javadoc（含 `@param`/`@return`/`@throws`），脚本静态校验通过。`@Override` 标注已随 Q-P1-4 完成，示例保留作教学参考。
 
 ---
 
@@ -375,13 +363,7 @@ public CommonResult testLoadConfig(String code) { ... }
 | T-06 | 加解密工具类必须有正向+逆向测试 | 加密后解密应得到原文 |
 | T-07 | Mock 外部依赖 | Mapper、网络调用等使用 Mockito Mock |
 
-> **当前项目无任何测试代码**，建议优先补充以下测试：
-> 1. `ECCCrypto` 加解密对称性测试
-> 2. `RsaUtil` 加解密对称性测试
-> 3. `AesGcmUtils` 加解密对称性测试
-> 3b. `AesUtil` 加解密对称性测试（含随机 IV 断言）
-> 4. `TestServiceImpl` 核心方法测试
-> 5. `TestController` 接口集成测试
+> **状态（2026-08-20）**：工具类测试已随 Q-P2-1 补齐；Service 核心方法测试（TEST-P1-2，`TestServiceImplCoreTest` 8 用例）与 Controller 集成测试（TEST-P1-3，`TestControllerTest` 14 用例）已随本轮补齐，全量 49/49 通过。`ECCCrypto` 加解密对称性已由 `TestServiceImplTest.encrypt_decrypt_往返还原原文` 间接覆盖（真实密钥 roundtrip），暂不单独立类。
 
 ---
 
@@ -499,23 +481,23 @@ public CommonResult testLoadConfig(String code) { ... }
   - DES 已被破解，应使用 AES
   - ✅ 已修复（2026-08-19）：`DesEncryptor.java` 整类删除（无生产调用点；DES 弱算法 + 硬编码默认密钥 `it_is_a_test_password`；pgcrypto `des-cbc/pad:pkcs` 兼容加密改用 SQL 侧 `encrypt()/decrypt()` 实现）
 
-- [ ] **SEC-P1-2**：MD5 不用于密码哈希或签名
+- [x] **SEC-P1-2**：MD5 不用于密码哈希或签名
   - 存在碰撞风险，应使用 SHA-256 或 BCrypt
-  - 当前状态：**存在违规** → `Md5Util.java`
+  - ✅ 已评估（2026-08-20）：`Md5Util` 生产代码零调用点，仅提供通用摘要 `calculateMD5`，未用于密码哈希或签名（无 HMAC-MD5/RSA-MD5 实现）；MD5 作为非安全场景摘要（数据指纹/旧系统兼容）予以保留，类与方法 Javadoc 已加安全警示（禁止密码哈希/签名/HMAC/证书指纹），防止未来误用
 
-- [ ] **SEC-P1-3**：接口输入参数校验
+- [x] **SEC-P1-3**：接口输入参数校验
   - 使用 `@Valid` + Bean Validation 注解
-  - 当前状态：**存在违规** → Controller 方法无参数校验
+  - ✅ 已修复（2026-08-20）：① 新建 `model/SaveConfigRequest`（`code` @NotNull+@Min(0)、`msg` @NotBlank），`saveConfig` 松散参数 `(int code, String msg)` 封装为 `@Valid @ModelAttribute SaveConfigRequest`；② Controller 类级 `@Validated`，`/encrypt` `/decrypt` `/save-log` 的 `@RequestBody String` 参数级 `@NotBlank`；③ `GlobalExceptionHandler` 新增参数绑定/校验异常统一 400 处理（`MethodArgumentNotValidException`/`BindException`/`ConstraintViolationException`/`HttpMessageNotReadableException`/`MissingServletRequestParameterException`/`MethodArgumentTypeMismatchException`）；④ 新增 `SaveConfigRequestTest` 4 用例（合法通过 + code 空/负 + msg 空白拒绝），JUnit 23/23 通过
 
-- [ ] **SEC-P1-4**：统一异常处理机制
+- [x] **SEC-P1-4**：统一异常处理机制
   - 使用 `@RestControllerAdvice` + `@ExceptionHandler`
-  - 当前状态：**缺失** → 无全局异常处理器
+  - ✅ 已修复（2026-08-19）：新增 `exception/GlobalExceptionHandler.java`（`@RestControllerAdvice` 统一兜底：`IllegalArgumentException` → 400 + 通用参数错误提示，其余异常 → 500 + "服务器内部错误"，完整堆栈仅记录服务端日志）；`TestController` 各接口移除 `return e.getMessage()`，异常上抛由全局处理器接管
 
 ### 可维护性-P1
 
-- [ ] **M-P1-1**：Controller 不包含业务逻辑
+- [x] **M-P1-1**：Controller 不包含业务逻辑
   - 加解密逻辑应放在 Service 层
-  - 当前状态：**存在违规** → `TestController.encrypt/decrypt` 包含加解密逻辑
+  - ✅ 已修复（2026-08-20）：`getVersion`（MANIFEST 解析）、`encrypt`（公钥读取 + ECC 加密）、`decrypt`（私钥读取 + ECC 解密）全部下沉至 `TestService`/`TestServiceImpl`；Controller 仅保留 HTTP 层调用，`configData` 依赖与相关 import 一并移除
 
 - [x] **M-P1-2**：统一 API 响应格式
   - 所有接口返回 `CommonResult` 包装
@@ -524,21 +506,21 @@ public CommonResult testLoadConfig(String code) { ... }
 - [x] **M-P1-3**：工具类声明为 `final` 并提供私有构造函数
   - ✅ 已修复（2026-08-19）：8 个工具类全部声明 `public final class` + 私有构造（含此前已修的 `AesGcmUtils`/`AesUtil`，本次补齐 `Md5Util`/`Sha256Util`/`HmacSha256Util`/`RsaUtil`/`PemUtils`/`JsonUtil` 6 个）；grep 确认 `com.my.work.util` 包下 8 个工具类全部 final + 私有构造
 
-- [ ] **M-P1-4**：配置项添加完整 Javadoc
-  - 当前状态：**存在违规** → `ConfigData` 部分属性无注释
+- [x] **M-P1-4**：配置项添加完整 Javadoc
+  - ✅ 已修复（2026-08-19）：`ConfigData` 此前缺注释的 3 个字段（`testBooleanDefaultValue2`/`testIntDefaultValue2`/`testStringDefaultValue2`）均已补齐 Javadoc，全类字段注释完整
 
-- [ ] **M-P1-5**：public 方法添加 Javadoc
+- [x] **M-P1-5**：public 方法添加 Javadoc
   - 包含 `@param`, `@return`, `@throws`
-  - 当前状态：**部分违规** → 多处方法缺少 Javadoc
+  - ✅ 已修复（2026-08-20）：全项目 65 个 public 方法/构造器全部具备 Javadoc，`@param`/`@return`/`@throws` 与签名一致（脚本校验通过）——补齐 13 处缺失（`TestService.test`/`ClientService.getTodoList`/`OtherClientService.getTodoList`/`TestController.getOtherClientInfo`/`TestMapper.selectTest`/`selectFunction`/`PemUtils` 3 方法/`ECCCrypto` 2 方法/`ECCKeyReader` 5 方法/`CommonResult` 3 构造器/`Application.main`/`TestServiceImpl.test`/`health`/`testSaveConfig`/6 个 Client impl 的 `getTodoList`），补全 15 处空 `@param`/`@return` 描述与 10 处缺失 `@throws`；顺手优化 `ECCCrypto`/`ECCKeyReader`/`PemUtils` 类级注释（去除"Deepseek 生成"字样）与 `JsonUtil`/`CommonResult`/`VersionResponse` 公共字段注释；javac 编译 29 源文件通过，JUnit 27/27 通过
 
 ### 测试-P1
 
-- [ ] **TEST-P1-1**：加解密工具有单元测试
-  - 当前状态：**缺失** → 无任何测试代码
-- [ ] **TEST-P1-2**：Service 核心方法有单元测试
-  - 当前状态：**缺失**
-- [ ] **TEST-P1-3**：Controller 有集成测试
-  - 当前状态：**缺失**
+- [x] **TEST-P1-1**：加解密工具有单元测试
+  - ✅ 已修复（2026-08-19）：随 Q-P2-1 新增 7 个 JUnit 测试类，加解密工具覆盖 `AesGcmUtilsTest`（7 用例：16/24/32 密钥 roundtrip、随机 IV、错误密钥/篡改拒绝）、`AesUtilTest`（3 用例：roundtrip、错误密钥拒绝）、`RsaUtilTest`（2 用例：roundtrip、错误密钥拒绝）；本地 `junit-platform-console-standalone` 验证 19/19 通过
+- [x] **TEST-P1-2**：Service 核心方法有单元测试
+  - ✅ 已修复（2026-08-20）：新增 `TestServiceImplCoreTest` 8 用例——`test()` 全链路存储过程调用（8 个 Mapper 调用点断言）、`health()` UP/DOWN 双路径、`testConfig()` 默认配置拼接、`dailyTask()`、`saveLogData()` 解密后入库、`testSaveConfig()` 编码透传、`testLoadConfig()` JSON 反序列化；配合既有 `TestServiceImplTest` 4 用例（加解密 roundtrip）覆盖 Service 全部 9 个核心方法；Mapper 用 JDK 动态代理桩替代（无 mockito 环境）
+- [x] **TEST-P1-3**：Controller 有集成测试
+  - ✅ 已修复（2026-08-20）：新增 `TestControllerTest` 14 用例——13 个端点方法全覆盖（`get`/`getVersion`/`health`/`saveConfig`/`readConfig`/`encrypt`/`decrypt`/`saveLogData`/`dailyTask`/`config`/`info`/`otherInfo`/`both`）+ 异常穿透路径（Service 抛异常时 Controller 不吞异常）；验证统一响应 `code=200,msg=success`、data 包装（字符串直放/对象与 Map JSON 序列化）、依赖编排（桩调用计数）；三个 Service 依赖全部用 JDK 动态代理桩（本机无 spring-test/MockMvc，直接实例化 Controller 调用端点方法）
 
 ---
 
@@ -659,6 +641,10 @@ PR 提交
 | 15 | ~~工具类~~ | 工具类未声明 `final` + 私有构造 | 补齐 8 个工具类 `public final class` + 私有构造 | ✅ 已修复（2026-08-19，6 个工具类本次补齐 + 2 个已修） |
 | 16 | ~~`TestController.java`/`GlobalExceptionHandler.java`~~ | API 响应格式不统一（String/Map/VersionResponse 混用） | 13 个接口统一返回 `CommonResult`，异常处理器同步返回 `ResponseEntity<CommonResult>` | ✅ 已修复（2026-08-19，javac 编译 28 源文件通过） |
 | 17 | ~~`pom.xml`~~ | Lombok 1.18.8 与 JDK 21 不兼容（`IllegalAccessError`，BOM 默认版本） | pom `properties` 新增 `<lombok.version>1.18.34</lombok.version>` 覆盖 Spring Boot BOM | ✅ 已修复（2026-08-19，`mvn -DskipTests compile` BUILD SUCCESS，`dependency:list` 确认 Lombok 1.18.34 生效） |
+| 18 | ~~`Md5Util.java`~~ | MD5 不应用于密码哈希或签名 | 评估并加安全警示 Javadoc | ✅ 已评估（2026-08-20，SEC-P1-2：生产零调用点，仅通用摘要，未用于密码/签名；类与方法 Javadoc 已加禁止用途说明） |
+| 19 | ~~`TestController.java`~~ | 接口输入参数无校验 | 松散参数封装 DTO + `@Valid` | ✅ 已修复（2026-08-20，SEC-P1-3：新建 `SaveConfigRequest` DTO；Controller 类级 `@Validated` + 3 处 `@RequestBody String` 参数级 `@NotBlank`；`GlobalExceptionHandler` 补 6 类参数绑定/校验异常统一 400；新增 `SaveConfigRequestTest` 4 用例，JUnit 23/23） |
+| 20 | ~~`TestController.java`~~ | Controller 包含业务逻辑（密钥读取 / MANIFEST 解析） | 下沉至 Service 层 | ✅ 已修复（2026-08-20，M-P1-1：`getVersion`/`encrypt`/`decrypt` 下沉至 `TestService`/`TestServiceImpl`，Controller 仅保留 HTTP 层调用，`configData` 依赖移除；新增 `TestServiceImplTest` 4 用例，JUnit 27/27） |
+| 21 | ~~全项目~~ | public 方法缺少 Javadoc（`@param`/`@return`/`@throws` 缺失或为空） | 补齐全部 public 方法 Javadoc | ✅ 已修复（2026-08-20，M-P1-5：65 个 public 方法/构造器全部具备完整 Javadoc，脚本校验 `@param`/`@return`/`@throws` 与签名一致；补齐 13 处缺失 + 15 处空标签 + 10 处 `@throws`；javac 29 源文件编译通过，JUnit 27/27） |
 
 ### P2（后续优化）
 

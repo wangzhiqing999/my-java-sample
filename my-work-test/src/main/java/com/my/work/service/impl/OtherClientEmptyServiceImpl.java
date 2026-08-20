@@ -29,13 +29,19 @@ public class OtherClientEmptyServiceImpl  implements OtherClientService {
     /**
      * 获取客户信息.
      *
-     * @return
+     * @return 客户信息字符串
      */
     @Override
     public String getClientInfo() {
         return "乙行业的 空白实现";
     }
 
+    /**
+     * 获取待办列表（空白实现，返回空列表）.
+     *
+     * @param typeCode 业务类型编码
+     * @return 空列表
+     */
     @Override
     public List<String> getTodoList(String typeCode) {
         return new ArrayList<>();

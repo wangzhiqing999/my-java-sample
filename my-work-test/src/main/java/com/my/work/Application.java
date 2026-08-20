@@ -19,6 +19,11 @@ public class Application {
 
     private static final Logger log = LoggerFactory.getLogger(Application.class);
 
+    /**
+     * 应用启动入口.
+     *
+     * @param args 命令行参数
+     */
     public static void main(String[] args) {
         log.info("start at {}", LocalDateTime.now());
         SpringApplication.run(Application.class, args);

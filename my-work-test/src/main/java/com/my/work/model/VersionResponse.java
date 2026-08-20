@@ -8,8 +8,10 @@ import lombok.Data;
 @Data
 public class VersionResponse {
 
+    /** 版本号（读取失败时为 "unknown"）. */
     private String version;
 
+    /** 项目名称（读取失败时为 "test-service"）. */
     private String projectName;
 
     /**

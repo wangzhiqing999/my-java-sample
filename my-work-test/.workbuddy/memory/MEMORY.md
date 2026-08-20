@@ -3,29 +3,33 @@
 ## 项目概况
 - 路径：`D:\My-Github\my-java-sample\my-work-test`
 - Spring Boot 4.1.0（parent 管理版本）+ JDK 21 目标 + MyBatis-Plus + PostgreSQL + Lombok + Jackson 3.2.0 + BouncyCastle + java-jwt
-- 源文件 28 个（src/main）+ 测试 7 个（src/test，JUnit 5，19 用例）
-- 代码审查基线（CODE_STANDARDS_AND_REVIEW_CHECKLIST.md）：P0 全部清零、P1 已修复（构造器注入/日志占位符/@Override/方法命名/HTTP 方法注解/println 清除/DES 删除）、P2 已修复（main 移除 + JUnit 迁移）
+- 源文件 29 个（src/main）+ 测试 11 个（src/test，JUnit 5，49 用例）
+- 代码审查基线（CODE_STANDARDS_AND_REVIEW_CHECKLIST.md）：P0 全部清零、P1 已修复（构造器注入/日志占位符/@Override/方法命名/HTTP 方法注解/println 清除/DES 删除/MD5 评估保留/参数校验 DTO/业务下沉 Service/**public 方法 Javadoc 完整**/**Service+Controller 测试**）、P2 已修复（main 移除 + JUnit 迁移 + JsonUtil import + VersionResponse 提取 + kebab-case）
 
 ## 环境约束与本地验证方式（重要）
 - 本机**无 mvn / 无 JDK21**，仅 JDK17：`C:/Program Files/Microsoft/jdk-17.0.19+10/bin/javac.exe`
 - m2 仓库缺 6 个依赖，每次需下载到 `target/deps/`（Windows 路径，不能用 /tmp）：
   bcpkix-jdk18on-1.78.1、bcprov-jdk18on-1.78.1（org/bouncycastle）、
   jackson-databind-3.2.0、jackson-core-3.2.0（tools/jackson/core）、
-  jackson-annotations-2.21（**必须 2.21 无 .0 后缀**，含 JsonSerializeAs）、
+  jackson-annotations-**2.22**（**必须 2.22**：databind 3.2.0 运行时反射加载 `JsonApplyView`，2.21 及更早版本缺失会 ClassNotFoundException；2.22 同时含 JsonSerializeAs/JsonDeserializeAs；m2 里的 jackson-annotations-2.19.1 必须从 classpath 排除，否则版本混淆）、
   java-jwt-4.4.0（com/auth0）
 - javac 必须 `-encoding UTF-8`（否则 GBK 乱码）；classpath 用 `D:/...` Windows 路径（POSIX /d/ 不识别）
 - **JUnit 本地运行**：下载 `junit-platform-console-standalone-1.11.4.jar` 到 target/deps →
   编译 main 到 `target/javac-check`、test 到 `target/test-check` →
   `java -jar target/deps/junit-platform-console-standalone-1.11.4.jar execute --class-path "target/javac-check;target/test-check;<全部依赖jar>" --scan-class-path "target/javac-check;target/test-check"`
-- **坑**：`--scan-class-path` 无参数会扫描整个 classpath（m2 几百个 jar）产生"幽灵失败"（jdt ClassNotFound 副作用），**必须显式指定扫描目录**；运行时 classpath 需带全依赖 jar（否则 PemUtils 等报 NoClassDefFoundError）
+- **坑**：`--scan-class-path` 无参数会扫描整个 classpath（m2 几百个 jar）产生"幽灵失败"（jdt ClassNotFound 副作用），**必须显式指定扫描目录**；运行时 classpath 需带全依赖 jar（否则 PemUtils 等报 NoClassDefFoundError）；**cp 生成时 m2 用 `! -path "*jackson-annotations*"` 排除**（m2 只有 2.19.1，缺 JsonApplyView），让 target/deps 的 2.22 生效
+- 分层测试模式（TEST-P1-2/3）：无 spring-test/MockMvc/mockito → Controller/Service 测试用 JDK 动态代理桩（`Proxy.newProxyInstance` + 方法名 switch 分派 + Object 方法放行），直接 `new TestController(stub, stub, stub)` 调端点方法验证响应结构与依赖编排
 
 ## 关键代码模式
 - AES-GCM：`AesGcmUtils.encrypt(plain, key)` → `Base64(12字节随机IV + 密文)`，16/24/32 字节密钥，GCM 认证拒绝错误密钥/篡改
 - AES-CBC：`AesUtil.doEncrypt/doDecrypt(plain, key)` → `Base64(16字节随机IV + 密文)`
 - RSA：`RsaUtil` RSA/ECB/PKCS1Padding，公钥 X509 Base64、私钥 PKCS8 Base64
 - 构造器注入：`@RequiredArgsConstructor` + `private final`（替代 @Autowired）
-- 统一异常：Controller/Service 异常上抛，`GlobalExceptionHandler`（@RestControllerAdvice）统一转换，客户端只见通用消息
-- 工具类（util 包）均为 final/私有构造或静态工具；无生产调用点的弱算法类直接删除（AesEcbUtils、DesEncryptor）
+- 统一异常：Controller/Service 异常上抛，`GlobalExceptionHandler`（@RestControllerAdvice）统一转换，客户端只见通用消息；参数绑定/校验异常（MethodArgumentNotValid/Bind/ConstraintViolation/HttpMessageNotReadable/参数缺失与类型不匹配）统一 400
+- 参数校验：接口入参用 DTO + `@Valid`（SaveConfigRequest 模式），`@RequestBody String` 参数级 `@NotBlank`；`spring-boot-starter-validation` 已在 pom
+- 分层职责：Controller 仅 HTTP 层（参数校验 + 响应包装），密钥读取/加解密/MANIFEST 解析等业务逻辑一律在 Service（M-P1-1）；Service 单测用 JDK `Proxy` 桩替代 mockito（m2 无 mockito/byte-buddy）
+- Javadoc 规范（M-P1-5）：全部 public 方法/构造器须有完整 Javadoc（@param/@return/@throws 与签名一致）；静态校验脚本思路——提取参数名时先剔除方法参数中的注解再按逗号拆分（避免 `@NotBlank(message=...)` 括号截断误报）
+- 工具类（util 包）均为 final/私有构造或静态工具；无生产调用点的弱算法类直接删除（AesEcbUtils、DesEncryptor）；MD5（Md5Util）仅作非安全通用摘要保留，Javadoc 已加禁止密码哈希/签名警示
 
 ## 业务约束
 - `TestMapper.testSumArray` 的 `@Select("SELECT test_sum_array(#{datas})")` 中 `test_sum_array` 是 **PostgreSQL 函数名**，不得改名

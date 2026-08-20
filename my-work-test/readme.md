@@ -406,7 +406,7 @@ curl http://localhost:8080/test/version
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/test/save-config?code=1&msg=test_message` | 保存配置到数据库（POST，参数经 query string 传入） |
+| POST | `/test/save-config?code=1&msg=test_message` | 保存配置到数据库（POST，参数经 query string 传入；`code` 必填且≥0、`msg` 非空白，Bean Validation 校验失败返回 400） |
 | GET | `/test/read-config` | 从数据库读取配置 |
 
 ```bash
@@ -622,6 +622,7 @@ src/main/java/com/my/work/
 │   └── TestMapper.java             # MyBatis Mapper（数据库操作）
 ├── model/
 │   ├── CommonResult.java           # 通用返回结果（code/msg/data）
+│   ├── SaveConfigRequest.java      # 保存配置请求参数 DTO（Bean Validation 校验）
 │   └── VersionResponse.java        # 版本信息响应体（version/projectName）
 ├── sec/
 │   ├── ECCCrypto.java              # ECC 加解密（ECDH + AES/GCM）
@@ -645,7 +646,11 @@ src/main/java/com/my/work/
 src/main/resources/
 ├── application.yml                 # 主配置文件
 └── logback-spring.xml              # 日志配置
-src/test/java/com/my/work/util/     # 单元测试（JUnit 5，7 个工具类测试类，19 用例）
+src/test/java/com/my/work/
+├── util/           # 工具类单元测试（JUnit 5，7 个测试类：AesGcmUtils/AesUtil/RsaUtil/HmacSha256Util/Md5Util/PemUtils/Sha256Util）
+├── service/        # Service 测试（TestServiceImplTest 加解密 roundtrip + TestServiceImplCoreTest 核心方法，12 用例）
+├── controller/     # Controller 集成测试（TestControllerTest，14 用例，JDK Proxy 桩）
+└── model/          # 参数校验测试（SaveConfigRequestTest，4 用例）
 ```
 
 ---

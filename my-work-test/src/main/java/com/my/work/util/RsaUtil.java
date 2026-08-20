@@ -31,6 +31,7 @@ public final class RsaUtil {
      * @param data 明文
      * @param publicKeyStr Base64公钥字符串
      * @return Base64加密密文
+     * @throws Exception 密钥解析或加密失败时抛出
      */
     public static String encrypt(String data, String publicKeyStr) throws Exception {
         PublicKey publicKey = getPublicKey(publicKeyStr);
@@ -45,6 +46,7 @@ public final class RsaUtil {
      * @param encryptData Base64密文
      * @param privateKeyStr Base64私钥字符串
      * @return 明文
+     * @throws Exception 密钥解析或解密失败时抛出
      */
     public static String decrypt(String encryptData, String privateKeyStr) throws Exception {
         PrivateKey privateKey = getPrivateKey(privateKeyStr);

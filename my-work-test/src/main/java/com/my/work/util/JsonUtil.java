@@ -27,14 +27,19 @@ public final class JsonUtil {
     private JsonUtil() {
     }
 
+    /** 日期时间格式：yyyy-MM-dd HH:mm:ss（系统默认时区）. */
     public static final DateTimeFormatter DEFAULT_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
+
+    /** 日期格式：yyyy-MM-dd. */
     public static final DateTimeFormatter DEFAULT_DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
+    /** 时间格式：HH:mm:ss. */
     public static final DateTimeFormatter DEFAULT_TIME_ONLY_FORMATTER =
             DateTimeFormatter.ofPattern("HH:mm:ss");
 
+    /** 全局 JsonMapper 实例（Jackson 3.x），启用格式化输出、忽略未知属性、注册日期时间序列化器. */
     public static final JsonMapper OBJECT_MAPPER;
 
     static {

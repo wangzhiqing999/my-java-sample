@@ -3,15 +3,30 @@ package com.my.work.util;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * MD5 摘要工具类（仅用于非安全场景）
+ *
+ * <p><b>安全警示（SEC-P1-2）</b>：MD5 已存在已知碰撞攻击，<b>禁止</b>用于以下场景：</p>
+ * <ul>
+ *   <li>密码哈希（应使用 BCrypt/Argon2/PBKDF2）</li>
+ *   <li>消息签名 / HMAC / 数字证书指纹</li>
+ *   <li>任何安全敏感、可被攻击者构造碰撞数据的场景</li>
+ * </ul>
+ *
+ * <p>仅允许用于非安全校验：数据指纹、去重、与旧系统（如数据库 MD5() 函数）兼容等。</p>
+ */
 public final class Md5Util {
 
     private Md5Util() {
     }
 
     /**
-     * 计算字符串的 MD5 哈希值（32位十六进制字符串）
+     * 计算字符串的 MD5 摘要值（32位十六进制字符串）
+     *
+     * <p><b>注意</b>：MD5 存在碰撞风险，仅限非安全用途；禁止用于密码哈希或签名。</p>
+     *
      * @param input 输入字符串
-     * @return MD5 哈希值（32位十六进制）
+     * @return MD5 摘要值（32位十六进制）
      */
     public static String calculateMD5(String input) {
         try {

@@ -21,13 +21,20 @@ public interface OtherClientService {
 
     /**
      * 获取客户信息.
-     * @return
+     *
+     * @return 客户信息字符串
      */
     String getClientInfo();
 
 
 
 
+    /**
+     * 获取待办列表.
+     *
+     * @param typeCode 业务类型编码
+     * @return 待办项列表
+     */
     List<String> getTodoList(String typeCode);
 
 }

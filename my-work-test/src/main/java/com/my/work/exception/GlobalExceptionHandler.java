@@ -1,11 +1,17 @@
 package com.my.work.exception;
 
 import com.my.work.model.CommonResult;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * 全局异常处理器（SEC-P0-4 修复，M-P1-2 同步统一为 {@link CommonResult}）。
@@ -32,7 +38,31 @@ public class GlobalExceptionHandler {
     private static final String MSG_INTERNAL_ERROR = "服务器内部错误，请稍后重试";
 
     /**
+     * 参数绑定/校验异常（SEC-P1-3）：{@code @Valid}/{@code @NotBlank} 校验失败、参数缺失或类型不匹配、
+     * 请求体不可读等，统一返回 400 + 通用参数错误提示，具体错误详情仅记录服务端日志。
+     *
+     * @param e 参数绑定/校验异常
+     * @return 400 响应（{@link CommonResult} 包装，含通用参数错误提示）
+     */
+    @ExceptionHandler({
+            MethodArgumentNotValidException.class,
+            BindException.class,
+            ConstraintViolationException.class,
+            HttpMessageNotReadableException.class,
+            MissingServletRequestParameterException.class,
+            MethodArgumentTypeMismatchException.class
+    })
+    public ResponseEntity<CommonResult> handleValidationException(Exception e) {
+        log.warn("parameter validation failed: {}", e.getMessage());
+        return ResponseEntity.badRequest()
+                .body(new CommonResult(CODE_BAD_REQUEST, MSG_BAD_REQUEST));
+    }
+
+    /**
      * 参数/业务类异常：返回 400，提示信息不包含内部细节。
+     *
+     * @param e 参数/业务异常
+     * @return 400 响应（{@link CommonResult} 包装，含通用参数错误提示）
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<CommonResult> handleIllegalArgumentException(IllegalArgumentException e) {
@@ -43,6 +73,9 @@ public class GlobalExceptionHandler {
 
     /**
      * 兜底异常：完整堆栈记录服务端日志，客户端仅返回通用错误消息（500）。
+     *
+     * @param e 未捕获的异常
+     * @return 500 响应（{@link CommonResult} 包装，含通用内部错误提示）
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<CommonResult> handleException(Exception e) {

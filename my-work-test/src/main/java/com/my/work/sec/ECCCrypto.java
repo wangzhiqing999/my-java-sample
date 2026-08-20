@@ -10,7 +10,16 @@ import java.util.Base64;
 
 
 /**
- * Deepseek 生成的 加密解密的代码.
+ * ECC 混合加解密工具类.
+ *
+ * <p>实际使用 ECDH 密钥协商 + AES-GCM 对称加密：</p>
+ * <ul>
+ *   <li>加密：生成临时 ECC 密钥对，与接收方公钥做 ECDH 协商出共享密钥，
+ *       用 SHA-256 派生 AES 密钥后以 AES/GCM/NoPadding 加密，返回
+ *       {@code Base64(临时公钥长度 + 临时公钥 + IV长度 + IV + 密文)}</li>
+ *   <li>解密：从密文中还原临时公钥，与接收方私钥做 ECDH 协商恢复共享密钥后解密</li>
+ *   <li>每次加密使用随机临时密钥对，保证相同明文产生不同密文</li>
+ * </ul>
  */
 public class ECCCrypto {
 
@@ -18,7 +27,14 @@ public class ECCCrypto {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
     }
 
-    // ECC加密（实际使用ECDH进行密钥协商，然后用AES加密）
+    /**
+     * ECC 加密（ECDH 密钥协商 + AES-GCM）.
+     *
+     * @param plainText 明文
+     * @param publicKey 接收方公钥（X.509 编码）
+     * @return Base64 编码的密文，格式为 {@code 临时公钥长度 + 临时公钥 + IV长度 + IV + 密文}
+     * @throws Exception 密钥协商、AES 加密或编码过程异常时抛出
+     */
     public static String encrypt(String plainText, PublicKey publicKey) throws Exception {
         // 生成临时的ECC密钥对
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC", "BC");
@@ -65,7 +81,14 @@ public class ECCCrypto {
         return Base64.getEncoder().encodeToString(result);
     }
 
-    // ECC解密
+    /**
+     * ECC 解密（解析密文后 ECDH 密钥协商 + AES-GCM 解密）.
+     *
+     * @param encryptedText Base64 编码的密文，格式与 {@link #encrypt(String, PublicKey)} 输出一致
+     * @param privateKey    接收方私钥（PKCS#8 编码）
+     * @return 解密后的明文
+     * @throws Exception 密文解析、密钥协商或 AES 解密异常时抛出
+     */
     public static String decrypt(String encryptedText, PrivateKey privateKey) throws Exception {
         byte[] data = Base64.getDecoder().decode(encryptedText);
 

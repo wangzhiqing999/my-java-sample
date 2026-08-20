@@ -4,6 +4,7 @@ import tools.jackson.databind.JsonNode;
 import com.my.work.config.ConfigData;
 import com.my.work.mapper.TestMapper;
 import com.my.work.model.CommonResult;
+import com.my.work.model.VersionResponse;
 import com.my.work.sec.ECCCrypto;
 import com.my.work.sec.ECCKeyReader;
 import com.my.work.service.TestService;
@@ -12,9 +13,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 import static com.my.work.util.JsonUtil.OBJECT_MAPPER;
 
@@ -33,6 +39,9 @@ public class TestServiceImpl implements TestService {
     private final ConfigData configData;
 
 
+    /**
+     * 测试方法：调用 Mapper 验证数据库连接与各存储过程调用链路.
+     */
     @Override
     public void test() {
         int n = testMapper.selectTest();
@@ -102,6 +111,11 @@ public class TestServiceImpl implements TestService {
     }
 
 
+    /**
+     * 获取服务器当前健康情况.
+     *
+     * @return 健康状态 Map（{@code status}=UP/DOWN，{@code message}=描述信息）
+     */
     @Override
     public Map<String, Object> health() {
         Map<String, Object> result = new HashMap<>();
@@ -121,7 +135,10 @@ public class TestServiceImpl implements TestService {
     /**
      * 测试存储日志数据.
      *
-     * @param requestData
+     * <p>入参为 ECC 加密后的 JSON 字符串，先解密再调用存储过程入库。</p>
+     *
+     * @param requestData ECC 加密后的 JSON 字符串
+     * @throws Exception 密钥解析、解密或存储过程调用失败时上抛
      */
     @Override
     public void saveLogData(String requestData) throws Exception {
@@ -145,7 +162,8 @@ public class TestServiceImpl implements TestService {
 
     /**
      * 测试的， 每天定时执行的任务.
-     * @return
+     *
+     * @return 任务执行结果描述
      */
     @Override
     public String dailyTask() {
@@ -157,7 +175,8 @@ public class TestServiceImpl implements TestService {
 
     /**
      * 测试业务逻辑，在配置文件中定义的情况.
-     * @return
+     *
+     * @return 配置信息拼接结果字符串
      */
     @Override
     public String testConfig() {
@@ -185,6 +204,12 @@ public class TestServiceImpl implements TestService {
 
 
 
+    /**
+     * 测试保存配置信息.
+     *
+     * @param code 配置编码
+     * @param data 配置数据（JSON 序列化后入库）
+     */
     @Override
     public void testSaveConfig(String code, CommonResult data) {
         try {
@@ -209,6 +234,79 @@ public class TestServiceImpl implements TestService {
     public CommonResult testLoadConfig(String code) throws Exception {
         String resultText = testMapper.fn_get_config(code);
         return OBJECT_MAPPER.readValue(resultText, CommonResult.class);
+    }
+
+
+    /**
+     * 获取项目版本信息（读取 MANIFEST.MF 中的 Project-Version / Project-Name）.
+     * 读取失败或字段缺失时回退默认值。
+     *
+     * @return 版本信息（version/projectName 均不为 null）
+     */
+    @Override
+    public VersionResponse getVersion() {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("META-INF/MANIFEST.MF")) {
+            if (is == null) {
+                return new VersionResponse("unknown", "test-service");
+            }
+
+            Manifest manifest = new Manifest(is);
+            Attributes attributes = manifest.getMainAttributes();
+
+            // 获取自定义的版本和项目名称
+            String version = attributes.getValue("Project-Version");
+            String name = attributes.getValue("Project-Name");
+
+            // 兜底处理（防止读取失败）
+            version = version != null ? version : "unknown";
+            name = name != null ? name : "test-service";
+
+            return new VersionResponse(version, name);
+        } catch (IOException e) {
+            // 异常时返回默认值
+            log.warn("读取 MANIFEST.MF 失败，使用默认版本信息", e);
+            return new VersionResponse("unknown", "test-service");
+        }
+    }
+
+
+    /**
+     * ECC 加密：读取配置的公钥后调用 {@link ECCCrypto#encrypt}.
+     *
+     * @param originalText 原始明文
+     * @return Base64 密文
+     * @throws Exception 公钥解析或加密失败时上抛
+     */
+    @Override
+    public String encrypt(String originalText) throws Exception {
+        // 读取密钥
+        PublicKey publicKey = ECCKeyReader.readPublicKeyFromString(configData.getPublicKeyPem());
+
+        log.debug("原始文本: {}", originalText);
+
+        String encryptedText = ECCCrypto.encrypt(originalText, publicKey);
+        log.debug("加密后: {}", encryptedText);
+
+        return encryptedText;
+    }
+
+
+    /**
+     * ECC 解密：读取配置的私钥后调用 {@link ECCCrypto#decrypt}.
+     *
+     * @param encryptedData Base64 密文
+     * @return 解密后的明文
+     * @throws Exception 私钥解析或解密失败时上抛
+     */
+    @Override
+    public String decrypt(String encryptedData) throws Exception {
+        // 读取密钥
+        PrivateKey privateKey = ECCKeyReader.readPrivateKeyFromString(configData.getPrivateKeyPem());
+
+        String decryptedText = ECCCrypto.decrypt(encryptedData, privateKey);
+        log.debug("解密后: {}", decryptedText);
+
+        return decryptedText;
     }
 
 

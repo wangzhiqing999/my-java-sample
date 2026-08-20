@@ -13,7 +13,8 @@ public class ClientBServiceImpl  implements ClientService {
 
     /**
      * 获取客户信息.
-     * @return
+     *
+     * @return 客户信息字符串
      */
     @Override
     public String getClientInfo() {
@@ -21,6 +22,11 @@ public class ClientBServiceImpl  implements ClientService {
     }
 
 
+    /**
+     * 获取待办列表.
+     *
+     * @return 待办项列表
+     */
     @Override
     public List<String> getTodoList() {
         List<String> resultList = new ArrayList<>();

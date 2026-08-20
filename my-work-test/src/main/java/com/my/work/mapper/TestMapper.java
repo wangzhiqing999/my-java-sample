@@ -13,9 +13,19 @@ import java.util.Map;
 @Mapper
 public interface TestMapper {
 
+    /**
+     * 数据库连接自检：执行 {@code select 1}.
+     *
+     * @return 固定返回 1
+     */
     @Select("select 1")
     int selectTest();
 
+    /**
+     * 获取数据库版本信息.
+     *
+     * @return PostgreSQL 版本字符串
+     */
     @Select("select version()")
     String selectFunction();
 
@@ -32,7 +42,7 @@ public interface TestMapper {
     /**
      * 测试 有参数，无返回值.
      * 注意：没有返回值的情况下，使用 @Update
-     * @param logText
+     * @param logText 日志文本内容
      */
     @Update("SELECT test_havep_nor(#{logText})")
     void callTestHavepNor(@Param("logText") String logText);
@@ -66,8 +76,9 @@ public interface TestMapper {
 
     /**
      * 调用数据库函数 test_sum_array（数组求和）， 参数是一个数组.
-     * @param datas
-     * @return
+     *
+     * @param datas 待求和的整型数组
+     * @return 数组元素之和
      */
     @Select("SELECT test_sum_array(#{datas})")
     int testSumArray(int[] datas);
@@ -77,8 +88,9 @@ public interface TestMapper {
 
     /**
      * 保存配置信息.
-     * @param p_code
-     * @param p_value
+     *
+     * @param p_code  配置编码
+     * @param p_value 配置值（JSON 字符串）
      */
     @Update("SELECT fn_save_config(#{p_code}, #{p_value}::json)")
     void fn_save_config(@Param("p_code") String p_code, @Param("p_value") String p_value);
@@ -86,8 +98,9 @@ public interface TestMapper {
 
     /**
      * 获取配置信息.
-     * @param p_code
-     * @return
+     *
+     * @param p_code 配置编码
+     * @return 配置值（JSON 字符串）
      */
     @Select("select fn_get_config(#{p_code})")
     String fn_get_config(@Param("p_code") String p_code);

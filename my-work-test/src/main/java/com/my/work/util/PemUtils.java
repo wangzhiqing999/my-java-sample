@@ -14,6 +14,12 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 
+/**
+ * PEM 密钥文件解析工具类.
+ *
+ * <p>基于 BouncyCastle 的 {@link PemReader} 解析 PEM 格式密钥，
+ * 支持 X.509 公钥（SubjectPublicKeyInfo）与 PKCS#8 私钥（PrivateKeyInfo）。</p>
+ */
 public final class PemUtils {
 
     private PemUtils() {
@@ -67,17 +73,41 @@ public final class PemUtils {
         }
     }
 
+    /**
+     * 从 PEM 文件读取公钥.
+     *
+     * @param filepath  PEM 文件路径
+     * @param algorithm 密钥算法（如 "RSA"、"EC"）
+     * @return 解析后的公钥对象
+     * @throws IOException 文件不存在、读取失败或 PEM 解析失败时抛出
+     */
     public static PublicKey readPublicKeyFromFile(String filepath, String algorithm) throws IOException {
         byte[] bytes = PemUtils.parsePEMFile(new File(filepath));
         return PemUtils.getPublicKey(bytes, algorithm);
     }
 
+    /**
+     * 从 PEM 文件读取私钥.
+     *
+     * @param filepath  PEM 文件路径
+     * @param algorithm 密钥算法（如 "RSA"、"EC"）
+     * @return 解析后的私钥对象
+     * @throws IOException 文件不存在、读取失败或 PEM 解析失败时抛出
+     */
     public static PrivateKey readPrivateKeyFromFile(String filepath, String algorithm) throws IOException {
         byte[] bytes = PemUtils.parsePEMFile(new File(filepath));
         return PemUtils.getPrivateKey(bytes, algorithm);
     }
 
 
+    /**
+     * 从 PEM 字符串读取私钥.
+     *
+     * @param pemString PEM 格式的私钥字符串
+     * @param algorithm 密钥算法（如 "RSA"、"EC"）
+     * @return 解析后的私钥对象
+     * @throws IOException PEM 解析失败时抛出
+     */
     public static PrivateKey readPrivateKeyFromString(String pemString, String algorithm) throws IOException {
         byte[] bytes = PemUtils.parsePEMString(pemString);
         return PemUtils.getPrivateKey(bytes, algorithm);

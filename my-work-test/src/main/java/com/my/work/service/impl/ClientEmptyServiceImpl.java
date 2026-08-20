@@ -29,13 +29,18 @@ public class ClientEmptyServiceImpl  implements ClientService {
     /**
      * 获取客户信息.
      *
-     * @return
+     * @return 客户信息字符串
      */
     @Override
     public String getClientInfo() {
         return "甲行业的 空白实现";
     }
 
+    /**
+     * 获取待办列表（空白实现，返回空列表）.
+     *
+     * @return 空列表
+     */
     @Override
     public List<String> getTodoList() {
         return new ArrayList<>();

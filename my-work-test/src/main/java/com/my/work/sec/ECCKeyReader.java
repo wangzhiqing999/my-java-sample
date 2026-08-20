@@ -15,7 +15,10 @@ import java.security.PublicKey;
 import java.security.Security;
 
 /**
- * Deepseek 生成的 读取 密钥的代码.
+ * ECC PEM 密钥读取工具类.
+ *
+ * <p>基于 BouncyCastle 的 {@link PEMParser} 读取 PEM 格式的 EC 私钥/公钥，
+ * 支持从文件或字符串解析，私钥格式支持 PKCS#8 与 PEMKeyPair。</p>
  */
 public class ECCKeyReader {
 
@@ -23,14 +26,26 @@ public class ECCKeyReader {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    // 从PEM文件读取私钥
+    /**
+     * 从 PEM 文件读取私钥.
+     *
+     * @param filename PEM 文件路径
+     * @return 解析后的私钥对象
+     * @throws Exception 文件读取或 PEM 解析失败时抛出
+     */
     public static PrivateKey readPrivateKeyFromFile(String filename) throws Exception {
         try (PEMParser pemParser = new PEMParser(new FileReader(filename))) {
             return readPrivateKey(pemParser);
         }
     }
 
-    // 从PEM字符串读取私钥
+    /**
+     * 从 PEM 字符串读取私钥.
+     *
+     * @param privateKeyPem PEM 格式的私钥字符串
+     * @return 解析后的私钥对象
+     * @throws Exception PEM 解析失败时抛出
+     */
     public static PrivateKey readPrivateKeyFromString(String privateKeyPem) throws Exception {
         try (PEMParser pemParser = new PEMParser(new StringReader(privateKeyPem))) {
             return readPrivateKey(pemParser);
@@ -51,14 +66,26 @@ public class ECCKeyReader {
         }
     }
 
-    // 从PEM文件读取公钥
+    /**
+     * 从 PEM 文件读取公钥.
+     *
+     * @param filename PEM 文件路径
+     * @return 解析后的公钥对象
+     * @throws Exception 文件读取或 PEM 解析失败时抛出
+     */
     public static PublicKey readPublicKeyFromFile(String filename) throws Exception {
         try (PEMParser pemParser = new PEMParser(new FileReader(filename))) {
             return readPublicKey(pemParser);
         }
     }
 
-    // 从PEM字符串读取公钥
+    /**
+     * 从 PEM 字符串读取公钥.
+     *
+     * @param publicKeyPem PEM 格式的公钥字符串
+     * @return 解析后的公钥对象
+     * @throws Exception PEM 解析失败时抛出
+     */
     public static PublicKey readPublicKeyFromString(String publicKeyPem) throws Exception {
         try (PEMParser pemParser = new PEMParser(new StringReader(publicKeyPem))) {
             return readPublicKey(pemParser);
@@ -79,7 +106,13 @@ public class ECCKeyReader {
         }
     }
 
-    // 同时读取密钥对
+    /**
+     * 从 PEM 字符串同时读取密钥对.
+     *
+     * @param privateKeyPem 包含公钥与私钥的 PEM 字符串（PEMKeyPair 格式）
+     * @return 密钥对（公钥 + 私钥）
+     * @throws Exception PEM 解析失败时抛出
+     */
     public static KeyPair readKeyPairFromString(String privateKeyPem) throws Exception {
         try (PEMParser pemParser = new PEMParser(new StringReader(privateKeyPem))) {
             Object object = pemParser.readObject();

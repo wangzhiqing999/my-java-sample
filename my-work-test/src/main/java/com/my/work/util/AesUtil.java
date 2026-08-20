@@ -35,6 +35,7 @@ public final class AesUtil {
      * @param plainText 明文，非空
      * @param key       密钥，UTF-8 字节长度必须为 16/24/32
      * @return Base64 编码的 IV+密文
+     * @throws Exception 参数非法、密钥长度不合法或加密失败时抛出
      */
     public static String doEncrypt(String plainText, String key) throws Exception {
         if (plainText == null) {
@@ -61,6 +62,7 @@ public final class AesUtil {
      * @param encryptedText 密文，非空
      * @param key           密钥，UTF-8 字节长度必须为 16/24/32
      * @return 解密后的明文字符串
+     * @throws Exception 参数非法、密钥长度不合法或解密失败时抛出
      */
     public static String doDecrypt(String encryptedText, String key) throws Exception {
         if (encryptedText == null) {

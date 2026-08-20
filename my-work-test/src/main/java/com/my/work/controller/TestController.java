@@ -1,27 +1,20 @@
 package com.my.work.controller;
 
-import com.my.work.config.ConfigData;
 import com.my.work.model.CommonResult;
-import com.my.work.model.VersionResponse;
-import com.my.work.sec.ECCCrypto;
-import com.my.work.sec.ECCKeyReader;
+import com.my.work.model.SaveConfigRequest;
 import com.my.work.service.ClientService;
 import com.my.work.service.OtherClientService;
 import com.my.work.service.TestService;
 import com.my.work.util.JsonUtil;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 
 /**
  * 简单的、测试用的控制器.
@@ -37,11 +30,10 @@ import java.util.jar.Manifest;
 @RequestMapping("/test")
 @Slf4j
 @RequiredArgsConstructor
+@Validated
 public class TestController {
 
     private final TestService testService;
-
-    private final ConfigData configData;
 
     /**
      * 注意：这个服务，是有多个实现的，具体使用哪一个实现，配置在 application.yml 文件中的 spring-->profiles-->active 下面.
@@ -95,28 +87,7 @@ public class TestController {
      */
     @GetMapping("/version")
     public CommonResult getVersion() {
-        // 读取MANIFEST.MF文件
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream("META-INF/MANIFEST.MF")) {
-            if (is == null) {
-                return success(new VersionResponse("unknown", "test-service"));
-            }
-
-            Manifest manifest = new Manifest(is);
-            Attributes attributes = manifest.getMainAttributes();
-
-            // 获取自定义的版本和项目名称
-            String version = attributes.getValue("Project-Version");
-            String name = attributes.getValue("Project-Name");
-
-            // 兜底处理（防止读取失败）
-            version = version != null ? version : "unknown";
-            name = name != null ? name : "test-service";
-
-            return success(new VersionResponse(version, name));
-        } catch (IOException e) {
-            // 异常时返回默认值
-            return success(new VersionResponse("unknown", "test-service"));
-        }
+        return success(testService.getVersion());
     }
 
     /**
@@ -131,15 +102,14 @@ public class TestController {
     /**
      * 测试保存配置信息.
      * http://localhost:8080/test/save-config?code=1&msg=test_message
-     * @param code 配置编码
-     * @param msg  配置消息
+     * @param request 配置参数（{@code code} 必填且≥0、{@code msg} 非空白，Bean Validation 校验，SEC-P1-3）
      * @return 统一响应体
      */
     @PostMapping("/save-config")
-    public CommonResult saveConfig(int code, String msg) {
+    public CommonResult saveConfig(@Valid @ModelAttribute SaveConfigRequest request) {
         CommonResult testData = new CommonResult();
-        testData.setCode(code);
-        testData.setMsg(msg);
+        testData.setCode(request.getCode());
+        testData.setMsg(request.getMsg());
         testService.testSaveConfig("TEST", testData);
         return success();
     }
@@ -148,6 +118,7 @@ public class TestController {
      * 测试保存配置信息.
      * http://localhost:8080/test/read-config
      * @return 统一响应体，data 为配置信息（JSON 序列化）
+     * @throws Exception 配置读取或 JSON 解析失败时上抛，由全局异常处理器统一处理
      */
     @GetMapping("/read-config")
     public CommonResult readConfig() throws Exception {
@@ -162,18 +133,11 @@ public class TestController {
      *
      * @param originalText 原始文本
      * @return 统一响应体，data 为加密后文本
+     * @throws Exception 密钥解析或加密失败时上抛，由全局异常处理器统一处理
      */
     @PostMapping("/encrypt")
-    public CommonResult encrypt(@RequestBody String originalText) throws Exception {
-        // 读取密钥
-        PublicKey publicKey = ECCKeyReader.readPublicKeyFromString(configData.getPublicKeyPem());
-
-        log.debug("原始文本: {}", originalText);
-
-        String encryptedText = ECCCrypto.encrypt(originalText, publicKey);
-        log.debug("加密后: {}", encryptedText);
-
-        return success(encryptedText);
+    public CommonResult encrypt(@RequestBody @NotBlank(message = "原始文本不能为空") String originalText) throws Exception {
+        return success(testService.encrypt(originalText));
     }
 
     /**
@@ -185,29 +149,21 @@ public class TestController {
      *
      * @param encryptedData 加密数据
      * @return 统一响应体，data 为解密后文本
+     * @throws Exception 密钥解析或解密失败时上抛，由全局异常处理器统一处理
      */
     @PostMapping("/decrypt")
-    public CommonResult decrypt(@RequestBody String encryptedData) throws Exception {
-        // encryptedData 就是加密后的数据（可能是Base64编码的字符串）
-        // 读取密钥
-        PrivateKey privateKey = ECCKeyReader.readPrivateKeyFromString(configData.getPrivateKeyPem());
-
-        // 后续可以进行解密处理
-
-        // 处理解密后的数据
-        String decryptedText = ECCCrypto.decrypt(encryptedData, privateKey);
-        log.debug("解密后: {}", decryptedText);
-
-        return success(decryptedText);
+    public CommonResult decrypt(@RequestBody @NotBlank(message = "加密数据不能为空") String encryptedData) throws Exception {
+        return success(testService.decrypt(encryptedData));
     }
 
     /**
      * 测试一个 先解密， 后调用存储过程的处理.
      * @param encryptedData 加密数据
      * @return 统一响应体
+     * @throws Exception 密钥解析、解密或存储过程调用失败时上抛，由全局异常处理器统一处理
      */
     @PostMapping("/save-log")
-    public CommonResult saveLogData(@RequestBody String encryptedData) throws Exception {
+    public CommonResult saveLogData(@RequestBody @NotBlank(message = "加密数据不能为空") String encryptedData) throws Exception {
         log.debug("/save-log start!");
         testService.saveLogData(encryptedData);
         return success();
@@ -258,6 +214,12 @@ public class TestController {
         return success(clientService.getClientInfo());
     }
 
+    /**
+     * 获取其他行业（乙行业）客户信息.
+     * 实现类由 application.yml 中 spring-->profiles-->active 决定（otherClientC / otherClientD / otherClientEmpty）.
+     *
+     * @return 统一响应体，data 为客户信息
+     */
     @GetMapping("/other-info")
     public CommonResult getOtherClientInfo() {
         log.debug("/other-info start!");
