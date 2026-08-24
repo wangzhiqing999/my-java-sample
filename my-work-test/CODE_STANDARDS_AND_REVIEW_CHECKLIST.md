@@ -436,8 +436,9 @@ public String saveConfig(@Valid @RequestBody SaveConfigDTO dto) { ... }
 
 ### 功能正确性-P0
 
-- [ ] **FN-P0-1**：核心业务路径有异常处理
+- [x] **FN-P0-1**：核心业务路径有异常处理
   - 数据库操作、加解密、外部调用等关键路径不能缺少 try-catch 或 throws 声明
+  - ✅ 已修复（2026-08-24）：逐项审查核心路径——① `TestServiceImpl.testSaveConfig()` **吞掉数据库写入异常**（catch 后仅记日志，Controller 仍返回 200 success，客户端误判保存成功）→ 移除 catch，异常上抛（接口/实现签名加 `throws Exception`，`TestController.saveConfig` 同步声明，三处 Javadoc 补 `@throws`，与 `testLoadConfig`/`saveLogData`/`encrypt`/`decrypt` 一致）；② `test()` 的 8 个数据库调用 Javadoc 明确"异常上抛由 `GlobalExceptionHandler` 兜底"（MyBatis 运行时异常无需声明，链路经 `@ExceptionHandler(Exception.class)` → 500 完整）；③ 复核确认其余核心路径已合规：加解密工具 `throws Exception`、健康检查 try-catch 返回 DOWN（不暴露异常）、MANIFEST 读取 catch 返回默认值、Client 实现为纯内存操作、定时任务无 IO 路径；新增回归用例 2 个（Service 层数据库写入异常上抛 + Controller 层异常穿透），JUnit 51/51 通过
 - [ ] **FN-P0-2**：事务边界正确
   - 涉及多次写操作的方法必须添加 `@Transactional`
 - [ ] **FN-P0-3**：资源正确关闭
@@ -534,10 +535,11 @@ public String saveConfig(@Valid @RequestBody SaveConfigDTO dto) { ... }
   - 工具类中的 `main` 方法仅用于测试，应迁移到单元测试
   - ✅ 已修复（2026-08-19）：6 个工具类 main 随 Q-P1-2 删除；pom 新增 `spring-boot-starter-test`（test），新增 7 个 JUnit 测试类（`AesGcmUtilsTest`/`AesUtilTest`/`Sha256UtilTest`/`Md5UtilTest`/`HmacSha256UtilTest`/`RsaUtilTest`/`PemUtilsTest`，共 19 用例），本地 `junit-platform-console-standalone` 验证 19/19 通过
 
-- [ ] **Q-P2-2**：使用 Java 21 特性简化代码
+- [x] **Q-P2-2**：使用 Java 21 特性简化代码
   - Record 类替代简单 DTO（`CommonResult`, `VersionResponse`）
   - Pattern Matching、Switch Expressions
   - Text Block 处理多行字符串
+  - ✅ 已修复（2026-08-24）：`CommonResult`/`VersionResponse` 改为 `record`（保留 `CommonResult` 双参便捷构造器，删除可变无参构造器与 `@Data`）；`TestServiceImpl.testConfig()` 改用 Text Block + `formatted()`；测试侧访问器同步为 `code()/msg()/data()/version()/projectName()`；Jackson 3.x 对 Record 的序列化（`/version`、`/read-config`）与反序列化（`testLoadConfig`）经 JUnit 49/49 验证，API 契约不变
 
 - [x] **Q-P2-3**：移除冗余的注释代码
   - `JsonUtil.java` 中注释掉的 import 语句应删除
@@ -553,17 +555,22 @@ public String saveConfig(@Valid @RequestBody SaveConfigDTO dto) { ... }
 
 ### 性能-P2
 
-- [ ] **PERF-P2-1**：`ECCCrypto` 每次加解密都注册 Provider
+- [x] **PERF-P2-1**：`ECCCrypto` 每次加解密都注册 Provider
   - `static` 块已优化，但可考虑使用 `@Bean` 方式注册一次
-- [ ] **PERF-P2-2**：避免在循环中创建对象
+  - ✅ 已修复（2026-08-24）：新增 `config/SecurityConfig.java`（`@Configuration` + `@Bean` 注册 `BouncyCastleProvider`，Spring 单例语义保证只注册一次）；移除 `ECCCrypto` 与 `ECCKeyReader` 中的 `static` 块，改为 `ensureProvider()` 惰性兜底（非 Spring 环境如单元测试首次调用时自动注册，Spring 环境下为 no-op）；Javadoc 补全；javac 30 源文件编译通过，JUnit 49/49 通过（含 ECC 加解密 roundtrip 验证兜底生效）
+- [x] **PERF-P2-2**：避免在循环中创建对象
   - `TestServiceImpl.test()` 中 JSON 解析可在提取为独立方法
+  - ✅ 已修复（2026-08-24）：将 `test()` 中 for 循环内 20 行 JSON 解析逻辑提取为 `private void parseAndLogJsonResult(Map<String, Object>)` 独立方法（含完整 Javadoc），`test()` 方法职责更清晰；javac 30 源文件编译通过，JUnit 49/49 通过
 
 ### 文档-P2
 
-- [ ] **DOC-P2-1**：README 中的接口文档保持更新
+- [x] **DOC-P2-1**：README 中的接口文档保持更新
   - 新增/修改接口时同步更新
-- [ ] **DOC-P2-2**：数据库变更同步更新 SQL 脚本文档
-- [ ] **DOC-P2-3**：使用 Swagger/OpenAPI 自动生成接口文档
+  - ✅ 已修复（2026-08-24）：对照 `TestController` 13 个端点逐项核对 README「使用示例」——补齐遗漏的 `GET /test/config`（测试默认配置接口，含表格与 curl 示例）；「功能特性」表格同步补充 `/test/config` 验证说明；修复定时任务章节过时示例代码（`log.info("...：" + result)` 字符串拼接 → `log.info("...：{}", result)` 占位符，与 Q-P1-3 实际代码一致）；项目结构树补充 `exception/GlobalExceptionHandler.java` 与 `config/SecurityConfig.java`（PERF-P2-1 新增），并修正 util 目录树未闭合格式
+- [x] **DOC-P2-2**：数据库变更同步更新 SQL 脚本文档
+  - ✅ 已修复（2026-08-24）：新建 `sql/init.sql`（2 表 + 8 函数，从 README 内嵌脚本提取并收敛为**单一事实来源**，幂等可重复执行，函数头部标注 Mapper 调用点）与 `sql/README.md`（脚本清单/执行方式/**数据库变更三步工作流**/命名约定）；README「数据库初始化」章节由内嵌 8 段完整脚本重构为对象清单表 + 执行方式 + 变更规范；安装步骤改为 `psql -f sql/init.sql`；贡献指南同步更新；项目结构树补 `sql/` 节点。消除「README 内嵌脚本多副本不同步」风险
+- [x] **DOC-P2-3**：使用 Swagger/OpenAPI 自动生成接口文档
+  - ✅ 已修复（2026-08-24）：引入 `springdoc-openapi-starter-webmvc-ui` **3.0.3**（Spring Boot 4 兼容线，Jackson 3 迁移完成，官方 demo 验证）；新建 `config/OpenApiConfig.java`（`@OpenAPIDefinition` 标题/版本/描述 + `GroupedOpenApi` 分组 `public-api`）；`TestController` 类级 `@Tag` + 13 个端点 `@Operation(summary)` 中文摘要；`CommonResult`/`VersionResponse`/`SaveConfigRequest` 加 `@Schema` 字段描述；`application.yml` 显式开启 `springdoc.api-docs.enabled=true` 与 `springdoc.swagger-ui.enabled=true`（Spring Boot 4 必需，且需配 `path`）；文档地址：`/swagger-ui.html`（交互 UI）、`/v3/api-docs`（OpenAPI JSON）、`/v3/api-docs.yaml`（YAML）；javac 31 源文件编译通过（0 errors），JUnit 49/49 通过，注解字节码验证写入（@Operation×13/@Schema×3 类）
 
 ---
 
