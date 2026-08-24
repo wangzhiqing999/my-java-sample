@@ -45,9 +45,10 @@
 | ECC 加解密 | 使用 ECDH 密钥协商 + AES/GCM 加密，公钥加密、私钥解密 |
 | 多客户 Profile | 一套接口多个实现，通过配置文件切换不同客户逻辑 |
 | 定时任务 | 基于 `@Scheduled` + cron 表达式，支持每日定时执行 |
-| 配置管理 | `@ConfigurationProperties` 绑定配置，支持默认值与配置覆盖 |
+| 配置管理 | `@ConfigurationProperties` 绑定配置，支持默认值与配置覆盖（`/test/config` 接口可验证） |
 | 健康检查 | `/test/health` 接口，通过数据库连通性检测服务状态 |
 | 版本管理 | `/test/version` 接口，读取 MANIFEST.MF 中的版本信息 |
+| 接口文档 | springdoc-openapi 自动生成：Swagger UI（`/swagger-ui.html`）+ OpenAPI 契约（`/v3/api-docs`） |
 | 异步支持 | `@EnableAsync` 开启异步方法调用 |
 
 ---
@@ -61,6 +62,7 @@
 | PostgreSQL Driver | 随 Spring Boot 管理 | 数据库驱动 |
 | BouncyCastle | 1.78.1 | ECC 加密提供者（`bcprov-jdk18on` / `bcpkix-jdk18on`） |
 | java-jwt | 4.4.0 | JWT 工具 |
+| springdoc-openapi | 3.0.3 | Swagger/OpenAPI 自动生成接口文档（Spring Boot 4 兼容线） |
 | Jackson | 3.2.0 | JSON 序列化 |
 | Lombok | 随 Spring Boot 管理 | 简化 Java POJO |
 | JDK | 21 | 运行环境 |
@@ -102,7 +104,13 @@ spring:
 
 ### 3. 初始化数据库
 
-参考下方 [数据库初始化](#数据库初始化) 章节，在 PostgreSQL 中执行建表和函数脚本。
+执行 [`sql/init.sql`](sql/init.sql) 完成建表和函数创建（幂等，可重复执行）：
+
+```bash
+psql -h <数据库地址> -p 5432 -U <用户名> -d <数据库名> -f sql/init.sql
+```
+
+> 数据库对象清单及维护规范见下方 [数据库初始化](#数据库初始化) 章节。
 
 ### 4. 编译打包
 
@@ -130,184 +138,38 @@ mvn spring-boot:run
 
 ## 数据库初始化
 
-在 PostgreSQL 中依次执行以下脚本，完成表和函数的创建。
+项目依赖的全部 PostgreSQL 对象（2 张表 + 8 个函数）已收敛为单一脚本 [`sql/init.sql`](sql/init.sql)，作为数据库结构的**单一事实来源**（DOC-P2-2）。脚本具有幂等性，可重复执行。
 
-### 1. 测试日志表
+### 执行方式
 
-```sql
-CREATE TABLE test_log (
-    log_id serial4 NOT NULL,                -- 日志流水号，自增主键
-    log_text text NULL,                     -- 日志文本信息
-    created_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,  -- 日志创建时间
-    CONSTRAINT test_log_pkey PRIMARY KEY (log_id)
-);
-COMMENT ON TABLE public.test_log IS '测试日志的表';
-COMMENT ON COLUMN public.test_log.log_id IS '日志流水号，自增主键';
-COMMENT ON COLUMN public.test_log.log_text IS '日志文本信息';
-COMMENT ON COLUMN public.test_log.created_at IS '日志创建的时间，默认为当前时间';
+```bash
+psql -h <host> -p 5432 -U <user> -d <database> -f sql/init.sql
 ```
 
-### 2. 无参数、无返回值函数
+### 数据库对象清单
 
-```sql
-CREATE OR REPLACE FUNCTION public.test_nop_nor()
-RETURNS void
-LANGUAGE plpgsql
-AS $function$
-BEGIN
-    INSERT INTO test_log(log_text, created_at)
-    VALUES('无参数，无返回', CURRENT_TIMESTAMP);
-END;
-$function$;
-```
+| 对象 | 类型 | 说明 | Mapper 调用点 |
+|------|------|------|---------------|
+| `test_log` | 表 | 测试日志表（自增主键 `log_id`、文本 `log_text`、时间 `created_at`） | — |
+| `common_config` | 表 | 通用配置表（主键 `config_code`、JSON 值 `config_value`、`ctime`/`utime`） | — |
+| `test_nop_nor()` | 函数 | 无参数无返回值，插入一条日志 | `TestMapper.callTestNopNor()` |
+| `test_havep_nor(varchar)` | 函数 | 有参数无返回值，拼接后插入日志 | `TestMapper.callTestHavepNor()` |
+| `test_havep_haver(varchar)` | 函数 | 有参数有返回值（bigint），返回新记录 ID | `TestMapper.testHavepHaver()` |
+| `test_havep_haverj(varchar)` | 函数 | 有参数，返回 JSON `{code,msg,id}` | `TestMapper.testHavepHaverj()` |
+| `test_havepj_haverj(json)` | 函数 | JSON 入参（含 `log_text`），返回 JSON `{code,msg,id}` | `TestMapper.testHavepjHaverj()` |
+| `test_sum_array(int[])` | 函数 | 整型数组求和 | `TestMapper.testSumArray()` |
+| `fn_save_config(varchar, json)` | 函数 | 配置 UPSERT（存在则更新值） | `TestMapper.fn_save_config()` |
+| `fn_get_config(varchar)` | 函数 | 按编码查询配置值（无记录返回 NULL） | `TestMapper.fn_get_config()` |
 
-### 3. 有参数、无返回值函数
+### 变更规范
 
-```sql
-CREATE OR REPLACE FUNCTION public.test_havep_nor(p_log_text character varying)
-RETURNS void
-LANGUAGE plpgsql
-AS $function$
-BEGIN
-    INSERT INTO test_log(log_text, created_at)
-    VALUES('有参数，无返回' || p_log_text, CURRENT_TIMESTAMP);
-END;
-$function$;
-```
+涉及数据库变更（新增/修改表、函数、索引等）时，**必须**同步完成以下三步，禁止只改其一：
 
-### 4. 有参数、有返回值函数
+1. 修改 `src/main/java/com/my/work/mapper/TestMapper.java` 中的 SQL 调用
+2. 更新 [`sql/init.sql`](sql/init.sql)（在函数头部注释中补充 Mapper 调用点）
+3. 同步更新上表「数据库对象清单」与 [安装步骤](#安装步骤) 中的执行说明
 
-```sql
-CREATE OR REPLACE FUNCTION public.test_havep_haver(p_log_text character varying)
-RETURNS bigint
-LANGUAGE plpgsql
-AS $function$
-DECLARE
-    new_id bigint;
-BEGIN
-    INSERT INTO test_log(log_text, created_at)
-    VALUES('有参数，有返回：' || p_log_text, CURRENT_TIMESTAMP)
-    RETURNING log_id INTO new_id;
-    RETURN new_id;
-END;
-$function$;
-```
-
-### 5. 有参数、有返回值，参数为数组
-
-```sql
-CREATE OR REPLACE FUNCTION public.test_sum_array(p_datas INT[])
-RETURNS INT
-LANGUAGE plpgsql
-AS $function$
-DECLARE
-    i INT;
-    v_result INT;
-BEGIN
-    v_result := 0;
-    FOR i IN 1..array_length(p_datas, 1) LOOP
-        v_result := v_result + p_datas[i];
-    END LOOP;
-    RETURN v_result;
-END;
-$function$;
-```
-
-### 6. 有参数、有返回值，返回类型为 JSON
-
-```sql
-CREATE OR REPLACE FUNCTION public.test_havep_haverj(p_log_text character varying)
-RETURNS json
-LANGUAGE plpgsql
-AS $function$
-DECLARE
-    new_id bigint;
-BEGIN
-    INSERT INTO test_log(log_text, created_at)
-    VALUES('有参数，返回JSON：' || p_log_text, CURRENT_TIMESTAMP)
-    RETURNING log_id INTO new_id;
-
-    RETURN json_build_object(
-        'code', 0,
-        'msg',   'success',
-        'id',    new_id);
-END;
-$function$;
-```
-
-### 7. 参数与返回值均为 JSON
-
-```sql
-CREATE OR REPLACE FUNCTION public.test_havepj_haverj(p_log_data json)
-RETURNS json
-LANGUAGE plpgsql
-AS $function$
-DECLARE
-    new_id bigint;
-    v_log_text varchar;
-BEGIN
-    v_log_text := p_log_data->>'log_text';
-
-    INSERT INTO test_log(log_text, created_at)
-    VALUES('参数JSON，返回JSON：' || v_log_text, CURRENT_TIMESTAMP)
-    RETURNING log_id INTO new_id;
-
-    RETURN json_build_object(
-        'code', 0,
-        'msg',   'success',
-        'id',    new_id);
-END;
-$function$;
-```
-
-### 8. 通用配置表及函数
-
-```sql
-CREATE TABLE common_config (
-    config_code   VARCHAR(32) NOT NULL,
-    config_desc   VARCHAR(256),
-    config_value  JSON,
-    ctime timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    utime timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT common_config_pkey PRIMARY KEY (config_code)
-);
-COMMENT ON TABLE common_config IS '通用配置表';
-COMMENT ON COLUMN common_config.config_code IS '配置代码';
-COMMENT ON COLUMN common_config.config_desc IS '配置描述';
-COMMENT ON COLUMN common_config.config_value IS '配置值';
-COMMENT ON COLUMN common_config.ctime IS '配置创建时间';
-COMMENT ON COLUMN common_config.utime IS '配置更新时间';
-```
-
-```sql
-CREATE OR REPLACE FUNCTION fn_save_config(p_code VARCHAR(32), p_value JSON)
-RETURNS void
-LANGUAGE plpgsql
-AS $function$
-BEGIN
-    INSERT INTO common_config (config_code, config_desc, config_value)
-    VALUES (p_code, '-', p_value)
-    ON CONFLICT (config_code)
-    DO UPDATE SET
-        config_value = p_value,
-        utime = CURRENT_TIMESTAMP;
-END;
-$function$;
-
-CREATE OR REPLACE FUNCTION fn_get_config(p_code VARCHAR(32))
-RETURNS JSON
-LANGUAGE plpgsql
-AS $function$
-DECLARE
-    v_result JSON;
-BEGIN
-    SELECT config_value INTO v_result
-    FROM common_config
-    WHERE config_code = p_code;
-    RETURN v_result;
-END;
-$function$;
-```
+> 详细维护流程与命名约定见 [`sql/README.md`](sql/README.md)。
 
 ---
 
@@ -381,6 +243,11 @@ openssl ec -in priv_key_s.pem -pubout -out pub_key_s.pem
 
 启动服务后，可通过以下接口进行测试。
 
+> **接口文档（DOC-P2-3）**：项目集成 springdoc-openapi 3.0.3（Spring Boot 4 兼容线），启动后自动生成接口文档：
+> - **Swagger UI**（交互式文档，支持在线调试）：<http://localhost:8080/swagger-ui.html>
+> - **OpenAPI JSON** 契约：<http://localhost:8080/v3/api-docs>
+> - **OpenAPI YAML** 契约：<http://localhost:8080/v3/api-docs.yaml>
+
 > **响应格式**：自 M-P1-2 修复起，所有接口统一返回 `CommonResult`（`{code, msg, data}`）。成功响应 `code=200`、`msg="success"`，业务数据放入 `data` 字段（对象/Map 序列化为 JSON 字符串，字符串直接放入）；异常由 `GlobalExceptionHandler` 兜底，返回 `code=400`（参数错误）或 `500`（服务器错误），`msg` 为通用提示。
 
 ### 基础测试
@@ -407,7 +274,8 @@ curl http://localhost:8080/test/version
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | POST | `/test/save-config?code=1&msg=test_message` | 保存配置到数据库（POST，参数经 query string 传入；`code` 必填且≥0、`msg` 非空白，Bean Validation 校验失败返回 400） |
-| GET | `/test/read-config` | 从数据库读取配置 |
+| GET | `/test/read-config` | 从数据库读取配置（data 为配置信息 JSON 序列化） |
+| GET | `/test/config` | 测试默认配置（data 为 `ConfigData` 各属性当前值的拼接字符串，用于验证配置文件覆盖默认值机制） |
 
 ```bash
 # 保存配置（POST，query 参数）
@@ -415,6 +283,9 @@ curl -X POST "http://localhost:8080/test/save-config?code=1&msg=hello"
 
 # 读取配置
 curl http://localhost:8080/test/read-config
+
+# 查看默认配置与配置覆盖结果
+curl http://localhost:8080/test/config
 ```
 
 ### ECC 加解密
@@ -517,7 +388,7 @@ spring:
 @Scheduled(cron = "0 * * * * ?")  // 每分钟执行一次（测试用）
 public void callDailyTask() {
     String result = testService.dailyTask();
-    log.info("定时任务调用结果：" + result);
+    log.info("定时任务调用结果：{}", result);  // 使用占位符，避免字符串拼接
 }
 ```
 
@@ -617,7 +488,10 @@ src/main/java/com/my/work/
 ├── controller/
 │   └── TestController.java          # REST 控制器（/test/*）
 ├── config/
-│   └── ConfigData.java             # 配置属性绑定（@ConfigurationProperties）
+│   ├── ConfigData.java             # 配置属性绑定（@ConfigurationProperties）
+│   └── SecurityConfig.java         # 安全配置（@Bean 注册 BouncyCastle Provider，PERF-P2-1）
+├── exception/
+│   └── GlobalExceptionHandler.java # 全局异常处理（@RestControllerAdvice 统一兜底）
 ├── mapper/
 │   └── TestMapper.java             # MyBatis Mapper（数据库操作）
 ├── model/
@@ -642,10 +516,13 @@ src/main/java/com/my/work/
     ├── Md5Util.java                 # MD5 工具
     ├── Sha256Util.java              # SHA-256 工具
     ├── HmacSha256Util.java          # HMAC-SHA256 工具
-    ├── PemUtils.java                # PEM 文件工具
+    └── PemUtils.java                # PEM 文件工具
 src/main/resources/
 ├── application.yml                 # 主配置文件
 └── logback-spring.xml              # 日志配置
+sql/
+├── init.sql                        # 数据库初始化脚本（表 + 函数，单一事实来源）
+└── README.md                       # SQL 脚本维护规范（变更流程/命名约定）
 src/test/java/com/my/work/
 ├── util/           # 工具类单元测试（JUnit 5，7 个测试类：AesGcmUtils/AesUtil/RsaUtil/HmacSha256Util/Md5Util/PemUtils/Sha256Util）
 ├── service/        # Service 测试（TestServiceImplTest 加解密 roundtrip + TestServiceImplCoreTest 核心方法，12 用例）
@@ -721,7 +598,7 @@ git push origin feature/your-feature-name
 
 - 提交前确保代码能正常编译：`mvn clean compile`
 - 不要提交与功能无关的格式化改动
-- 涉及数据库变更时，需同步更新本 README 中的 SQL 脚本
+- 涉及数据库变更时，需同步更新 `sql/init.sql` 及 README 中的数据库对象清单（详见 [数据库初始化](#数据库初始化) 变更规范）
 - 涉及新增接口时，需更新本 README 中的接口文档表格
 - **安全提醒**：切勿在代码或配置中提交真实的密钥、密码等敏感信息，示例中的密钥仅供演示
 

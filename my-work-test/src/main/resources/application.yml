@@ -3,6 +3,17 @@ server:
   servlet:
     context-path:
 
+# Swagger/OpenAPI 文档（DOC-P2-3）：Spring Boot 4 需显式启用
+springdoc:
+  api-docs:
+    enabled: true
+    # OpenAPI JSON 契约地址：/v3/api-docs
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    # Swagger UI 页面地址：/swagger-ui.html
+    path: /swagger-ui.html
+
 spring:
   profiles:
     # 改为 clientA,otherClientC  则注入 ClientAServiceImpl,OtherClientCServiceImpl
