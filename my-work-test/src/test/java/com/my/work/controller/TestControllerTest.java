@@ -44,12 +44,16 @@ class TestControllerTest {
     /** 控制桩 encrypt 是否抛异常（异常路径用例）. */
     private boolean encryptThrows;
 
+    /** 控制桩 testSaveConfig 是否抛异常（FN-P0-1 异常穿透用例）. */
+    private boolean saveConfigThrows;
+
     private TestController controller;
 
     @BeforeEach
     void setUp() {
         testServiceCalls.clear();
         encryptThrows = false;
+        saveConfigThrows = false;
 
         TestService testService = (TestService) Proxy.newProxyInstance(
                 TestService.class.getClassLoader(),
@@ -62,7 +66,11 @@ class TestControllerTest {
                     switch (method.getName()) {
                         case "test":
                         case "saveLogData":
+                            return null;
                         case "testSaveConfig":
+                            if (saveConfigThrows) {
+                                throw new RuntimeException("mock save-config failure");
+                            }
                             return null;
                         case "health": {
                             Map<String, Object> health = new HashMap<>();
@@ -143,8 +151,8 @@ class TestControllerTest {
     }
 
     private void assertSuccess(CommonResult result) {
-        assertEquals(200, result.getCode(), "成功响应 code 应为 200");
-        assertEquals("success", result.getMsg(), "成功响应 msg 应为 success");
+        assertEquals(200, result.code(), "成功响应 code 应为 200");
+        assertEquals("success", result.msg(), "成功响应 msg 应为 success");
     }
 
     private int callCount(String methodName) {
@@ -157,7 +165,7 @@ class TestControllerTest {
         CommonResult result = controller.get();
 
         assertSuccess(result);
-        assertNull(result.getData());
+        assertNull(result.data());
         assertEquals(1, callCount("test"));
     }
 
@@ -166,9 +174,9 @@ class TestControllerTest {
         CommonResult result = controller.getVersion();
 
         assertSuccess(result);
-        assertTrue(result.getData() != null && result.getData().contains("projectName"),
+        assertTrue(result.data() != null && result.data().contains("projectName"),
                 "data 应包含版本对象序列化字段");
-        assertTrue(result.getData().contains("test-service"));
+        assertTrue(result.data().contains("test-service"));
         assertEquals(1, callCount("getVersion"));
     }
 
@@ -177,13 +185,13 @@ class TestControllerTest {
         CommonResult result = controller.health();
 
         assertSuccess(result);
-        assertTrue(result.getData() != null && result.getData().contains("UP"),
+        assertTrue(result.data() != null && result.data().contains("UP"),
                 "data 应包含健康状态 UP");
         assertEquals(1, callCount("health"));
     }
 
     @Test
-    void saveConfig_调用testSaveConfig并返回成功() {
+    void saveConfig_调用testSaveConfig并返回成功() throws Exception {
         SaveConfigRequest request = new SaveConfigRequest();
         request.setCode(1);
         request.setMsg("test_message");
@@ -191,8 +199,20 @@ class TestControllerTest {
         CommonResult result = controller.saveConfig(request);
 
         assertSuccess(result);
-        assertNull(result.getData());
+        assertNull(result.data());
         assertEquals(1, callCount("testSaveConfig"));
+    }
+
+    @Test
+    void saveConfig_service抛异常时Controller不吞异常直接上抛() {
+        saveConfigThrows = true;
+
+        SaveConfigRequest request = new SaveConfigRequest();
+        request.setCode(1);
+        request.setMsg("test_message");
+
+        assertThrows(RuntimeException.class, () -> controller.saveConfig(request),
+                "FN-P0-1：数据库写入异常应穿透 Controller，由全局异常处理器统一处理");
     }
 
     @Test
@@ -200,7 +220,7 @@ class TestControllerTest {
         CommonResult result = controller.readConfig();
 
         assertSuccess(result);
-        assertTrue(result.getData() != null && result.getData().contains("cfg"),
+        assertTrue(result.data() != null && result.data().contains("cfg"),
                 "data 应包含桩返回的配置对象序列化内容");
         assertEquals(1, callCount("testLoadConfig"));
     }
@@ -210,7 +230,7 @@ class TestControllerTest {
         CommonResult result = controller.encrypt("hello");
 
         assertSuccess(result);
-        assertEquals("cipher:hello", result.getData());
+        assertEquals("cipher:hello", result.data());
         assertEquals(1, callCount("encrypt"));
     }
 
@@ -219,7 +239,7 @@ class TestControllerTest {
         CommonResult result = controller.decrypt("cipher-text");
 
         assertSuccess(result);
-        assertEquals("plain:cipher-text", result.getData());
+        assertEquals("plain:cipher-text", result.data());
         assertEquals(1, callCount("decrypt"));
     }
 
@@ -228,7 +248,7 @@ class TestControllerTest {
         CommonResult result = controller.saveLogData("encrypted-json");
 
         assertSuccess(result);
-        assertNull(result.getData());
+        assertNull(result.data());
         assertEquals(1, callCount("saveLogData"));
     }
 
@@ -237,7 +257,7 @@ class TestControllerTest {
         CommonResult result = controller.dailyTask();
 
         assertSuccess(result);
-        assertEquals("任务执行成功", result.getData());
+        assertEquals("任务执行成功", result.data());
         assertEquals(1, callCount("dailyTask"));
     }
 
@@ -246,7 +266,7 @@ class TestControllerTest {
         CommonResult result = controller.testConfig();
 
         assertSuccess(result);
-        assertEquals("config-string", result.getData());
+        assertEquals("config-string", result.data());
         assertEquals(1, callCount("testConfig"));
     }
 
@@ -255,7 +275,7 @@ class TestControllerTest {
         CommonResult result = controller.getClientInfo();
 
         assertSuccess(result);
-        assertEquals("客户A", result.getData());
+        assertEquals("客户A", result.data());
     }
 
     @Test
@@ -263,7 +283,7 @@ class TestControllerTest {
         CommonResult result = controller.getOtherClientInfo();
 
         assertSuccess(result);
-        assertEquals("客户C", result.getData());
+        assertEquals("客户C", result.data());
     }
 
     @Test
@@ -271,7 +291,7 @@ class TestControllerTest {
         CommonResult result = controller.getBoth();
 
         assertSuccess(result);
-        assertEquals("todo-a1,todo-a2,todo-c1", result.getData());
+        assertEquals("todo-a1,todo-a2,todo-c1", result.data());
     }
 
     @Test

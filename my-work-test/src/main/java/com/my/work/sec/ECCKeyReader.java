@@ -19,11 +19,22 @@ import java.security.Security;
  *
  * <p>基于 BouncyCastle 的 {@link PEMParser} 读取 PEM 格式的 EC 私钥/公钥，
  * 支持从文件或字符串解析，私钥格式支持 PKCS#8 与 PEMKeyPair。</p>
+ *
+ * <p>BouncyCastle Provider 由 {@link com.my.work.config.SecurityConfig} 通过
+ * Spring {@code @Bean} 统一注册；非 Spring 环境由 {@link #ensureProvider()} 惰性注册兜底。</p>
  */
 public class ECCKeyReader {
 
-    static {
-        Security.addProvider(new BouncyCastleProvider());
+    /**
+     * 确保 BouncyCastle Provider 已注册（非 Spring 环境的惰性兜底）.
+     *
+     * <p>Spring 环境下由 {@link com.my.work.config.SecurityConfig} 注册，
+     * 此方法为 no-op；非 Spring 环境（如单元测试）首次调用时注册。</p>
+     */
+    private static void ensureProvider() {
+        if (Security.getProvider("BC") == null) {
+            Security.addProvider(new BouncyCastleProvider());
+        }
     }
 
     /**
@@ -34,6 +45,7 @@ public class ECCKeyReader {
      * @throws Exception 文件读取或 PEM 解析失败时抛出
      */
     public static PrivateKey readPrivateKeyFromFile(String filename) throws Exception {
+        ensureProvider();
         try (PEMParser pemParser = new PEMParser(new FileReader(filename))) {
             return readPrivateKey(pemParser);
         }
@@ -47,6 +59,7 @@ public class ECCKeyReader {
      * @throws Exception PEM 解析失败时抛出
      */
     public static PrivateKey readPrivateKeyFromString(String privateKeyPem) throws Exception {
+        ensureProvider();
         try (PEMParser pemParser = new PEMParser(new StringReader(privateKeyPem))) {
             return readPrivateKey(pemParser);
         }
@@ -74,6 +87,7 @@ public class ECCKeyReader {
      * @throws Exception 文件读取或 PEM 解析失败时抛出
      */
     public static PublicKey readPublicKeyFromFile(String filename) throws Exception {
+        ensureProvider();
         try (PEMParser pemParser = new PEMParser(new FileReader(filename))) {
             return readPublicKey(pemParser);
         }
@@ -87,6 +101,7 @@ public class ECCKeyReader {
      * @throws Exception PEM 解析失败时抛出
      */
     public static PublicKey readPublicKeyFromString(String publicKeyPem) throws Exception {
+        ensureProvider();
         try (PEMParser pemParser = new PEMParser(new StringReader(publicKeyPem))) {
             return readPublicKey(pemParser);
         }
@@ -114,6 +129,7 @@ public class ECCKeyReader {
      * @throws Exception PEM 解析失败时抛出
      */
     public static KeyPair readKeyPairFromString(String privateKeyPem) throws Exception {
+        ensureProvider();
         try (PEMParser pemParser = new PEMParser(new StringReader(privateKeyPem))) {
             Object object = pemParser.readObject();
             JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");

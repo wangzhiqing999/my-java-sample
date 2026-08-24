@@ -8,6 +8,8 @@ import java.security.*;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Base64;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 
 /**
  * ECC 混合加解密工具类.
@@ -20,11 +22,23 @@ import java.util.Base64;
  *   <li>解密：从密文中还原临时公钥，与接收方私钥做 ECDH 协商恢复共享密钥后解密</li>
  *   <li>每次加密使用随机临时密钥对，保证相同明文产生不同密文</li>
  * </ul>
+ *
+ * <p>BouncyCastle Provider 由 {@link com.my.work.config.SecurityConfig} 通过
+ * Spring {@code @Bean} 统一注册；非 Spring 环境（如单元测试直接调用）由
+ * {@link #ensureProvider()} 惰性注册兜底。</p>
  */
 public class ECCCrypto {
 
-    static {
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+    /**
+     * 确保 BouncyCastle Provider 已注册（非 Spring 环境的惰性兜底）.
+     *
+     * <p>Spring 环境下由 {@link com.my.work.config.SecurityConfig} 注册，
+     * 此方法为 no-op；非 Spring 环境（如单元测试）首次调用时注册。</p>
+     */
+    private static void ensureProvider() {
+        if (Security.getProvider("BC") == null) {
+            Security.addProvider(new BouncyCastleProvider());
+        }
     }
 
     /**
@@ -36,6 +50,7 @@ public class ECCCrypto {
      * @throws Exception 密钥协商、AES 加密或编码过程异常时抛出
      */
     public static String encrypt(String plainText, PublicKey publicKey) throws Exception {
+        ensureProvider();
         // 生成临时的ECC密钥对
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC", "BC");
         keyGen.initialize(new ECGenParameterSpec("secp256k1"));
@@ -90,6 +105,7 @@ public class ECCCrypto {
      * @throws Exception 密文解析、密钥协商或 AES 解密异常时抛出
      */
     public static String decrypt(String encryptedText, PrivateKey privateKey) throws Exception {
+        ensureProvider();
         byte[] data = Base64.getDecoder().decode(encryptedText);
 
         // 读取临时公钥

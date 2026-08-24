@@ -14,6 +14,11 @@ public interface TestService {
 
     /**
      * 测试方法：调用 Mapper 验证数据库连接与各存储过程调用链路.
+     *
+     * <p>FN-P0-1：数据库调用失败时抛出异常（MyBatis 运行时异常），
+     * 由 {@code GlobalExceptionHandler} 统一兜底返回 500，不在此处吞异常。</p>
+     *
+     * @throws RuntimeException 任一 Mapper 调用失败时抛出（数据库连接异常/存储过程执行失败）
      */
     void test();
 
@@ -58,10 +63,14 @@ public interface TestService {
     /**
      * 测试保存配置信息.
      *
+     * <p>FN-P0-1 修复：数据库写入失败时异常上抛（不再吞异常），
+     * 由全局异常处理器统一返回 500，避免调用方误判保存成功。</p>
+     *
      * @param code 配置编码
      * @param data 配置数据（JSON 序列化后入库）
+     * @throws Exception JSON 序列化或存储过程调用失败时上抛
      */
-    void testSaveConfig(String code, CommonResult data);
+    void testSaveConfig(String code, CommonResult data) throws Exception;
 
 
     /**

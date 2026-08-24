@@ -41,6 +41,11 @@ public class TestServiceImpl implements TestService {
 
     /**
      * 测试方法：调用 Mapper 验证数据库连接与各存储过程调用链路.
+     *
+     * <p>FN-P0-1：数据库调用失败时抛出异常（MyBatis 运行时异常），
+     * 由 {@code GlobalExceptionHandler} 统一兜底返回 500，不在此处吞异常。</p>
+     *
+     * @throws RuntimeException 任一 Mapper 调用失败时抛出（数据库连接异常/存储过程执行失败）
      */
     @Override
     public void test() {
@@ -62,36 +67,7 @@ public class TestServiceImpl implements TestService {
 
         Map<String, Object> jsonResult = testMapper.testHavepHaverj("Java 调用");
         log.info("select test_havep_haverj result: {}", jsonResult);
-        for (Map.Entry<String, Object> entry : jsonResult.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-
-
-            // 判空，避免空指针
-            if (value == null) {
-                log.info("Key: {}, Value: null", key);
-                continue;
-            }
-
-            try {
-                // 将 JSON 字符串解析为 JsonNode 对象
-                JsonNode jsonNode = OBJECT_MAPPER.readTree(value.toString());
-
-                // 提取指定字段的值
-                int code = jsonNode.get("code").asInt(); // 数字类型用 asInt()
-                String msg = jsonNode.get("msg").asText(); // 字符串类型用 asText()
-                int id2 = jsonNode.get("id").asInt();
-
-                // 输出解析后的字段值
-                log.info("Key: {}", key);
-                log.info("  code: {}", code);
-                log.info("  msg: {}", msg);
-                log.info("  id: {}", id2);
-            } catch (Exception e) {
-                // 解析失败时的异常处理
-                log.error("解析 JSON 失败，原始值：{}", value, e);
-            }
-        }
+        parseAndLogJsonResult(jsonResult);
 
 
 
@@ -108,6 +84,42 @@ public class TestServiceImpl implements TestService {
         log.info("testSumArray( 1,2,3,4 ) = {}", result);
 
 
+    }
+
+
+    /**
+     * 遍历 Map 中的 JSON 字符串值，解析并记录 code/msg/id 字段.
+     *
+     * <p>从 testHavepHaverj 存储过程返回的 Map 中逐条解析 JSON，
+     * 单条解析失败不影响其余条目。</p>
+     *
+     * @param jsonResult 存储过程返回的 Map（value 为 JSON 字符串）
+     */
+    private void parseAndLogJsonResult(Map<String, Object> jsonResult) {
+        for (Map.Entry<String, Object> entry : jsonResult.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            if (value == null) {
+                log.info("Key: {}, Value: null", key);
+                continue;
+            }
+
+            try {
+                JsonNode jsonNode = OBJECT_MAPPER.readTree(value.toString());
+
+                int code = jsonNode.get("code").asInt();
+                String msg = jsonNode.get("msg").asText();
+                int id2 = jsonNode.get("id").asInt();
+
+                log.info("Key: {}", key);
+                log.info("  code: {}", code);
+                log.info("  msg: {}", msg);
+                log.info("  id: {}", id2);
+            } catch (Exception e) {
+                log.error("解析 JSON 失败，原始值：{}", value, e);
+            }
+        }
     }
 
 
@@ -181,25 +193,18 @@ public class TestServiceImpl implements TestService {
     @Override
     public String testConfig() {
 
-        StringBuilder sb = new StringBuilder();
-
-        // 配置文件里面，没有设置属性的，使用 类里面写的默认值.
-        sb.append("testBooleanDefaultValue = ");
-        sb.append(configData.isTestBooleanDefaultValue());
-        sb.append("; testIntDefaultValue = ");
-        sb.append(configData.getTestIntDefaultValue());
-        sb.append("; testStringDefaultValue = ");
-        sb.append(configData.getTestStringDefaultValue());
-
-        // 配置文件里面，设置属性了，使用配置文件中的数值.
-        sb.append(";\r\ntestBooleanDefaultValue2 = ");
-        sb.append(configData.isTestBooleanDefaultValue2());
-        sb.append("; testIntDefaultValue2 = ");
-        sb.append(configData.getTestIntDefaultValue2());
-        sb.append("; testStringDefaultValue2 = ");
-        sb.append(configData.getTestStringDefaultValue2());
-
-        return sb.toString();
+        // 配置文件里面，没有设置属性的，使用 类里面写的默认值；
+        // 配置文件里面，设置属性了，使用配置文件中的数值。
+        return """
+                testBooleanDefaultValue = %s; testIntDefaultValue = %s; testStringDefaultValue = %s
+                testBooleanDefaultValue2 = %s; testIntDefaultValue2 = %s; testStringDefaultValue2 = %s
+                """.formatted(
+                configData.isTestBooleanDefaultValue(),
+                configData.getTestIntDefaultValue(),
+                configData.getTestStringDefaultValue(),
+                configData.isTestBooleanDefaultValue2(),
+                configData.getTestIntDefaultValue2(),
+                configData.getTestStringDefaultValue2());
     }
 
 
@@ -207,19 +212,18 @@ public class TestServiceImpl implements TestService {
     /**
      * 测试保存配置信息.
      *
+     * <p>FN-P0-1 修复：移除原 catch 吞异常逻辑（数据库写入失败时调用方无法感知），
+     * 异常上抛由 {@code GlobalExceptionHandler} 统一兜底。</p>
+     *
      * @param code 配置编码
      * @param data 配置数据（JSON 序列化后入库）
+     * @throws Exception JSON 序列化或存储过程调用失败时上抛
      */
     @Override
-    public void testSaveConfig(String code, CommonResult data) {
-        try {
-            String json = JsonUtil.toJson(data);
+    public void testSaveConfig(String code, CommonResult data) throws Exception {
+        String json = JsonUtil.toJson(data);
 
-            testMapper.fn_save_config(code, json);
-
-        } catch (Exception ex){
-            log.error("保存配置信息发生错误...", ex);
-        }
+        testMapper.fn_save_config(code, json);
     }
 
 

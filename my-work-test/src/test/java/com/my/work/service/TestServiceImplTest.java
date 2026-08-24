@@ -58,8 +58,8 @@ class TestServiceImplTest {
         VersionResponse version = service.getVersion();
 
         assertNotNull(version);
-        assertNotNull(version.getVersion());
-        assertNotNull(version.getProjectName());
+        assertNotNull(version.version());
+        assertNotNull(version.projectName());
     }
 
     @Test

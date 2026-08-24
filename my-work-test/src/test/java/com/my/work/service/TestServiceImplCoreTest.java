@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -50,6 +51,9 @@ class TestServiceImplCoreTest {
     /** 控制 selectTest 是否抛异常（健康检查 DOWN 路径）. */
     private boolean dbDown;
 
+    /** 控制 fn_save_config 是否抛异常（FN-P0-1 异常上抛用例）. */
+    private boolean saveConfigThrows;
+
     private TestServiceImpl service;
 
     @BeforeEach
@@ -57,6 +61,7 @@ class TestServiceImplCoreTest {
         mapperCalls.clear();
         savedConfigCode.set(null);
         dbDown = false;
+        saveConfigThrows = false;
 
         TestMapper mapper = (TestMapper) Proxy.newProxyInstance(
                 TestMapper.class.getClassLoader(),
@@ -88,6 +93,9 @@ class TestServiceImplCoreTest {
                         case "testSumArray":
                             return 10;
                         case "fn_save_config":
+                            if (saveConfigThrows) {
+                                throw new RuntimeException("mock db write failure");
+                            }
                             savedConfigCode.set((String) args[0]);
                             return null;
                         case "fn_get_config":
@@ -181,10 +189,8 @@ class TestServiceImplCoreTest {
     }
 
     @Test
-    void testSaveConfig_序列化后调用fn_save_config() {
-        CommonResult data = new CommonResult();
-        data.setCode(1);
-        data.setMsg("test_message");
+    void testSaveConfig_序列化后调用fn_save_config() throws Exception {
+        CommonResult data = new CommonResult(1, "test_message");
 
         service.testSaveConfig("TEST", data);
 
@@ -193,13 +199,23 @@ class TestServiceImplCoreTest {
     }
 
     @Test
+    void testSaveConfig_数据库写入失败时异常上抛不吞异常() {
+        saveConfigThrows = true;
+
+        CommonResult data = new CommonResult(1, "test_message");
+
+        assertThrows(RuntimeException.class, () -> service.testSaveConfig("TEST", data),
+                "FN-P0-1：数据库写入异常必须上抛，禁止吞异常后静默返回");
+    }
+
+    @Test
     void testLoadConfig_解析配置JSON为CommonResult() throws Exception {
         CommonResult result = service.testLoadConfig("TEST");
 
         assertNotNull(result);
-        assertEquals(200, result.getCode());
-        assertEquals("ok", result.getMsg());
-        assertEquals("cfg", result.getData());
+        assertEquals(200, result.code());
+        assertEquals("ok", result.msg());
+        assertEquals("cfg", result.data());
         assertEquals(1, mapperCallCount("fn_get_config"));
     }
 }
